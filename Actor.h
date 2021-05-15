@@ -20,7 +20,7 @@ public:
 
 private:
     bool _state;//Actor is alive or dead
-    StudentWorld* ptr;
+    StudentWorld *ptr;
 };
 
 
