@@ -15,12 +15,12 @@ public:
     virtual void doSomething() = 0; //pure virtual function
     void setState(bool state);      
     bool getState();
-    StudentWorld* getPtr();
+    virtual StudentWorld* getWorld();
     virtual ~Actor();
 
 private:
     bool _state;//Actor is alive or dead
-    StudentWorld *ptr;
+    StudentWorld *_swActor;
 };
 
 
@@ -38,6 +38,8 @@ public:
     void setWater(int water);
     int getGoldNuggets();
     void setGoldNuggets(int goldNuggets);
+    int getBarrels();
+    void setBarrels(int barrelsLeft);
     virtual ~IceMan();
 
 private:
@@ -46,6 +48,7 @@ private:
     int _water;
     int _sonar;
     int _goldNuggets;
+    int _barrelsLeft;
 };
 
 /**************************************************************************************************/

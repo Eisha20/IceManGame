@@ -11,7 +11,7 @@ Actor::Actor(int imageID, int startX, int startY, Direction dir, double size, un
 
     GraphObject::setVisible(true); 
     _state = true; 
-    ptr = swActor;
+    _swActor = swActor;
 }
 
 //accessor and mutator for the state of the Actor
@@ -23,11 +23,9 @@ bool Actor::getState() {
     return _state;
 }
 
-StudentWorld* Actor::getPtr() {
-    return ptr;
+StudentWorld* Actor::getWorld() {
+    return _swActor;
 }
-
-
 Actor::~Actor() {
 
 }
@@ -47,7 +45,7 @@ void IceMan::doSomething() {
         return;
     int x = this->getX();
     int y = this->getY();
-    StudentWorld* world = this->getPtr();
+    StudentWorld* world = this->getWorld();
     
     //Remove ice if ice man's location overlaps with ice objects
     for (int i = 0; i < 4; i++) {
@@ -105,6 +103,13 @@ void IceMan::doSomething() {
     }
 
 
+}
+//acessor and mutator for barrels
+int IceMan::getBarrels() {
+    return _barrelsLeft;
+}
+void IceMan::setBarrels(int barrelsLeft) {
+    _barrelsLeft = barrelsLeft;
 }
 
 //acessor and mutator for health

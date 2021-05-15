@@ -30,11 +30,17 @@ int StudentWorld::move() {
      
     if (iceMan->getState()) {//if iceMan is alive then call do something 
         iceMan->doSomething();
+
+        if (!(iceMan->getState())) {  // Actor is dead.
+            decLives();
+            return GWSTATUS_PLAYER_DIED;
+        }
+
+        if (iceMan->getBarrels() == 0) // There may be a cleaner indicator for the end of a level, but this is a placeholder.
+            return GWSTATUS_FINISHED_LEVEL;
     }
 
-
-    decLives();
-    return GWSTATUS_PLAYER_DIED;
+        return GWSTATUS_CONTINUE_GAME;
 }
 
 
