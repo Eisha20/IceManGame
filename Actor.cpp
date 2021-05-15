@@ -59,6 +59,51 @@ void IceMan::doSomething() {
         }
     }
 
+    int key;
+    if (getWorld()->getKey(key) == true) { // Accessing GameWorld's getKey fn to see if a key was hit by user.
+        switch (key) {
+        case KEY_PRESS_LEFT:
+            if (getDirection() != left)
+                setDirection(left);
+            else if (getX() > 0)
+                moveTo(getX() - 1, getY());
+            break;
+
+        case KEY_PRESS_RIGHT:
+            if (getDirection() != right)
+                setDirection(right);
+            else if (getX() < VIEW_WIDTH - 4)
+                moveTo(getX() + 1, getY());
+            break;
+
+        case KEY_PRESS_UP:
+            if (getDirection() != up)
+                setDirection(up);
+            else if (getY() < VIEW_HEIGHT - 4)
+                moveTo(getX(), getY() + 1);
+            break;
+
+        case KEY_PRESS_DOWN:
+            if (getDirection() != down)
+                setDirection(down);
+            else if (getY() > 0)
+                moveTo(getX(), getY() - 1);
+            break;
+
+        case KEY_PRESS_SPACE:
+            // add a squirt in front of player.
+            break;
+
+        case KEY_PRESS_TAB:
+            // add here
+            break;
+
+        case KEY_PRESS_ESCAPE:
+            // add here
+            break;
+        }
+    }
+
 
 }
 
