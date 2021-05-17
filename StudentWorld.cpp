@@ -51,8 +51,7 @@ void StudentWorld::cleanUp() {
     //delete all ice objects
     for (int row = 0; row < (VIEW_HEIGHT - 4); row++) {
         for (int col = 0; col < VIEW_WIDTH; col++) {
-            delete iceCube[row][col];
-            iceCube[row][col] = nullptr;
+            destroyIce(row, col);
         }
     }
 
@@ -73,13 +72,6 @@ void StudentWorld::makeIceMan() { // Creates Ice Man.
 
 void StudentWorld::makeIceCubes() { // Creates Ice Field.
 
-    //for (int column = 0; column < (VIEW_WIDTH - 4); ++column) {
-    //    if (column == 30)
-    //        column += 4; // Skip middle four column as initial hole.
-    //    for (int row = 4; row < (VIEW_HEIGHT - 4); ++row) {
-    //        iceCube[row][column] = new Ice(column, row, this);
-    //    }
-    //}
     for (int column = 0; column < VIEW_WIDTH; ++column) { //x
         if (column == 30) {
             for (int x = 0; x < 4; x++) {
@@ -146,7 +138,6 @@ void StudentWorld::makeStatString() {
     setGameStatText(gameStat);
 }
 
-
 bool StudentWorld::isIcePresent(int x, int y) {
     if (y < (VIEW_HEIGHT - 4)) { //if out of bounds
         if (iceCube[x][y] != nullptr) { //if ice is not present 
@@ -162,4 +153,18 @@ bool StudentWorld::isIcePresent(int x, int y) {
 void StudentWorld::destroyIce(int x, int y) {
     delete iceCube[x][y];
     iceCube[x][y] = nullptr;
+}
+
+StudentWorld::~StudentWorld() {
+    for (int row = 0; row < (VIEW_HEIGHT - 4); row++) {
+        for (int col = 0; col < VIEW_WIDTH; col++) {
+            if (iceCube[row][col] != nullptr)
+                destroyIce(row, col);
+        }
+    }
+
+    if (iceMan != nullptr) {
+        delete iceMan;
+        iceMan = nullptr;
+    }
 }
