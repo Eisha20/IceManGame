@@ -7,15 +7,15 @@
 // Actor Class ////////////////////////////////////////////////////////////////////////////////////////
 
 Actor::Actor(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
-    StudentWorld* swActor) : GraphObject(imageID, startX, startY, dir, size, depth ) {
+    StudentWorld* swActor) : GraphObject(imageID, startX, startY, dir, size, depth) {
 
-    GraphObject::setVisible(true); 
-    _state = true; 
+    GraphObject::setVisible(true);
+    _state = true;
     _swActor = swActor;
 }
 
 //accessor and mutator for the state of the Actor
-void Actor::setState(bool state){
+void Actor::setState(bool state) {
     _state = state;
 }
 
@@ -32,8 +32,8 @@ Actor::~Actor() {
 
 // IceMan Class ///////////////////////////////////////////////////////////////////////////////////////
 
-IceMan::IceMan(StudentWorld* swIceMan) : Actor(IID_PLAYER, 30, 60, right, 1.0, 0, swIceMan){
-   //initial state of the ice man. 
+IceMan::IceMan(StudentWorld* swIceMan) : Actor(IID_PLAYER, 30, 60, right, 1.0, 0, swIceMan) {
+    //initial state of the ice man. 
     _water = 5;
     _sonar = 1;
     _goldNuggets = 0;
@@ -46,16 +46,7 @@ void IceMan::doSomething() {
     int x = this->getX();
     int y = this->getY();
     StudentWorld* world = this->getWorld();
-    
-    //Remove ice if ice man's location overlaps with ice objects
-    for (int i = 0; i < 4; i++) {
-        for (int  j= 0; 4 < 2; j++) {
-            if (world->isIcePresent(x+i, y+j)) {
-                world->destroyIce(x+i, y+j);
-                world->playSound(SOUND_DIG);
-            }
-        }
-    }
+
 
     int key;
     if (getWorld()->getKey(key) == true) { // Accessing GameWorld's getKey fn to see if a key was hit by user.
@@ -102,6 +93,15 @@ void IceMan::doSomething() {
         }
     }
 
+    //Remove ice if ice man's location overlaps with ice objects
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (world->isIcePresent(x + i, y + j)) {
+                world->destroyIce(x + i, y + j);
+                world->playSound(SOUND_DIG);
+            }
+        }
+    }
 
 }
 //acessor and mutator for barrels
@@ -117,9 +117,9 @@ int IceMan::getHealth() {
     return _health;
 }
 void IceMan::decHealth(int health) {
-   /* if (health != 0) {
-        _health = 
-    }*/
+    /* if (health != 0) {
+         _health =
+     }*/
 
 }
 

@@ -35,8 +35,10 @@ public:
     void destroyIce(int x, int y);
 private:
     IceMan* iceMan;
-    Ice* iceCube[VIEW_HEIGHT-4][VIEW_WIDTH];//an array of ice* so that we can access the objects. 
-    std::vector <Actor*> goodies; 
+
+    //(x, y) coordinate: column, row
+    Ice* iceCube[VIEW_WIDTH][VIEW_HEIGHT - 4];//an array of ice* so that we can access the objects. 
+    std::vector <Actor*> goodies;
 };
 
 #endif // STUDENTWORLD_H_

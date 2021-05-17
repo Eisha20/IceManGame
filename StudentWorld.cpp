@@ -25,9 +25,9 @@ int StudentWorld::init() {
 int StudentWorld::move() {
     // This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-   
+
     makeStatString(); //set the status string 
-     
+
     if (iceMan->getState()) {//if iceMan is alive then call do something 
         iceMan->doSomething();
 
@@ -40,7 +40,7 @@ int StudentWorld::move() {
             return GWSTATUS_FINISHED_LEVEL;
     }
 
-        return GWSTATUS_CONTINUE_GAME;
+    return GWSTATUS_CONTINUE_GAME;
 }
 
 
@@ -48,7 +48,7 @@ void StudentWorld::cleanUp() {
     //delete iceMan
     delete iceMan;
     iceMan = nullptr;
-     //delete all ice objects
+    //delete all ice objects
     for (int row = 0; row < (VIEW_HEIGHT - 4); row++) {
         for (int col = 0; col < VIEW_WIDTH; col++) {
             delete iceCube[row][col];
@@ -80,38 +80,44 @@ void StudentWorld::makeIceCubes() { // Creates Ice Field.
     //        iceCube[row][column] = new Ice(column, row, this);
     //    }
     //}
-    for (int column = 0; column < VIEW_WIDTH; ++column) {
+    for (int column = 0; column < VIEW_WIDTH; ++column) { //x
         if (column == 30) {
             for (int x = 0; x < 4; x++) {
+                //add 4*4 block at the bottom of column 30
                 for (int row = 0; row < 4; ++row) {
-                    iceCube[row][column] = new Ice(column, row, this);
+                    iceCube[column][row] = new Ice(column, row, this);
                 }
 
-                column ++; // Skip middle four column as initial hole.
+                //set pointers to nullptr
+                for (int row = 4; row < (VIEW_HEIGHT - 4); ++row) {
+                    iceCube[column][row] = nullptr;
+                }
+                column++; // Skip middle four column as initial hole.
+
             }
         }
-        for (int row = 0; row < (VIEW_HEIGHT - 4); ++row) {
-            iceCube[row][column] = new Ice(column, row, this);
+        for (int row = 0; row < (VIEW_HEIGHT - 4); ++row) {//y
+            iceCube[column][row] = new Ice(column, row, this);
         }
     }
     /*
     I totally forgot to tell you but I made some changes to this function too.
-        - I removed - 4 from the for loop (line 71) because I believe the instructions 
-          said that the ice should fill the entire width 
+        - I removed - 4 from the for loop (line 71) because I believe the instructions
+          said that the ice should fill the entire width
         - I added 4*4 ice to the end of the empty tunnel. I didn't
-          come across anyting in the instructions that said that, however, the game does have it 
-          in there. I'll leave it up to you to decide if we should keep it or not.        
+          come across anyting in the instructions that said that, however, the game does have it
+          in there. I'll leave it up to you to decide if we should keep it or not.
     */
 }
 
 void StudentWorld::makeGoodies() {
-    
+
 }
 
 void StudentWorld::makeStatString() {
     //format: Lvl: _ Lives: _ Hlth: _ Wtr: _ Gld: _ Oil Left: _ Sonar: _ Scr: _ 
     /*Does not print hlth, wtr, gld, oil left, sonar*/
-    int level = getLevel(); 
+    int level = getLevel();
     int lives = getLives();
     int score = getScore();
     int health = iceMan->getHealth();
@@ -121,10 +127,10 @@ void StudentWorld::makeStatString() {
     //int oilLeft! maybe make a variable in student world that holds this value
 
     string gameStat = "Lvl: ";
-    
+
     string levelStr = to_string(level);
     gameStat += levelStr;
-     
+
     gameStat += " Lives: ";
     string livesStr = to_string(lives);
     gameStat += livesStr;
@@ -136,16 +142,21 @@ void StudentWorld::makeStatString() {
     gameStat += " Scr: ";
     string scoreStr = to_string(score);
     gameStat += score;
-   
-    setGameStatText(gameStat); 
+
+    setGameStatText(gameStat);
 }
 
 
 bool StudentWorld::isIcePresent(int x, int y) {
-    if ((*iceCube[x][y]).getState())
-        return true;
-    else
-        return false;
+    if (y < (VIEW_HEIGHT - 4)) { //if out of bounds
+        if (iceCube[x][y] != nullptr) { //if ice is not present 
+            if ((*iceCube[x][y]).getState())
+                return true;
+            else
+                return false;
+        }
+    }
+    return false;
 }
 
 void StudentWorld::destroyIce(int x, int y) {
