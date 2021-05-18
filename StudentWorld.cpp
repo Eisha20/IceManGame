@@ -15,6 +15,7 @@ StudentWorld::StudentWorld(std::string assetDir)
 int StudentWorld::init() {
     makeIceMan();
     makeIceCubes();
+    makeRegularProtesters();
 
     // According to the manual (P. 16), keep remainder of game objects (Protestors, Gold Nuggets, Oil,
     // Etc.) within a single STL collection such as a list or vector.
@@ -102,6 +103,10 @@ void StudentWorld::makeIceCubes() { // Creates Ice Field.
     */
 }
 
+void StudentWorld::makeRegularProtesters() {
+    regularProtester = new RegularProtester(this);
+}
+
 void StudentWorld::makeGoodies() {
 
 }
@@ -137,6 +142,7 @@ void StudentWorld::makeStatString() {
 
     setGameStatText(gameStat);
 }
+
 
 bool StudentWorld::isIcePresent(int x, int y) {
     if (y < (VIEW_HEIGHT - 4)) { //if out of bounds

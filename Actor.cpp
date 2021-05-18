@@ -3,7 +3,6 @@
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
 
-
 // Actor Class ////////////////////////////////////////////////////////////////////////////////////////
 
 Actor::Actor(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
@@ -146,6 +145,7 @@ int IceMan::getGoldNuggets() {
 void IceMan::setGoldNuggets(int goldNuggets) {
     _goldNuggets = goldNuggets;
 }
+
 IceMan::~IceMan() {
     this->setVisible(false);
 }
@@ -163,6 +163,65 @@ Ice::~Ice() {
     this->setVisible(false);
 }
 
+// Protester Class ////////////////////////////////////////////////////////////////////////////////////
+// I'm planning on changing this back to inherting from a base Protestor class.
+RegularProtester::RegularProtester(StudentWorld* swR_Protester) : Actor(IID_PROTESTER, 60, 60, left, 1.0, 0, swR_Protester) {
+    _hitPoints = 5;
+    _level = getWorld()->getLevel();
+    _ticksToWaitBetweenMoves = std::max(0, 3 - _level / 4);
+}
+
+// Accessor and Mutator for hitPoints
+int RegularProtester::getHitPoints() {
+    return _hitPoints;
+}
+void RegularProtester::setHitPoints(int hitPoints) {
+    _hitPoints = hitPoints;
+}
+
+bool RegularProtester::isWithinShoutingDistance() {
+    // If within 4 units of IceMan and facing in the IceMan's direction.
+    // return true.
+    // else return false.
+    return true;
+}
+
+bool RegularProtester::isAbleToYell() {
+    return true;
+}
+
+void RegularProtester::doSomething() {
+    if (!this->getState()) // If dead, return immediately.
+        return;
+
+
+    else if (_ticksToWaitBetweenMoves != 0) {
+        --_ticksToWaitBetweenMoves;
+        return;
+    }
+    else if (_hitPoints == 0) {
+        // code to have protester leave field.
+    }
+
+
+}
+
+RegularProtester::~RegularProtester() {
+
+}
+
+// Regular Protester Class ////////////////////////////////////////////////////////////////////////////
+/*
+RegularProtester::RegularProtester(StudentWorld* swR_Protester){
+    : Actor(IID_PROTESTER, 60, 60, left, 1.0, 0, swR_Protester)
+
+}
+
+RegularProtester::~RegularProtester() {
+
+}
+
+*/
 //////Goodie Class//////////////////////////////////////////////////////////////////////////
 
 //Goodie::Goodie(): Actor() {

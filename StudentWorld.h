@@ -4,13 +4,12 @@
 #include "GameWorld.h"
 #include "GameConstants.h"
 #include <string>
+#include <algorithm>
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
 #include "Actor.h"
 #include <vector>
-// class IceMan;
-// class Ice;
 
 class StudentWorld : public GameWorld {
 public:
@@ -30,15 +29,21 @@ public:
 
     void makeGoodies();
 
+    void makeRegularProtesters();
+
     void makeStatString();
     bool isIcePresent(int x, int y);
     void destroyIce(int x, int y);
+
+    virtual ~StudentWorld();
+
 private:
     IceMan* iceMan;
 
     //(x, y) coordinate: column, row
     Ice* iceCube[VIEW_WIDTH][VIEW_HEIGHT - 4];//an array of ice* so that we can access the objects. 
     std::vector <Actor*> goodies;
+    RegularProtester* regularProtester;
 };
 
 #endif // STUDENTWORLD_H_
