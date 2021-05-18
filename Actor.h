@@ -9,18 +9,18 @@ class StudentWorld;
 
 class Actor : public GraphObject { // "Base" Class
 public:
-    Actor(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
-        StudentWorld* swActor);
+    Actor(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth, StudentWorld* swActor);
 
     virtual void doSomething() = 0; //pure virtual function
-    void setState(bool state);      
+    void setState(bool state);
     bool getState();
     virtual StudentWorld* getWorld();
     virtual ~Actor();
 
 private:
     bool _state;//Actor is alive or dead
-    StudentWorld *_swActor;
+    int _level;
+    StudentWorld* _swActor;
 };
 
 
@@ -64,24 +64,34 @@ private:
 };
 
 /******************************************PROTESTER HIERARCHY*****************************/
+class RegularProtester : public Actor {
+public:
+    RegularProtester(StudentWorld* swProtester);
 
-//class Protester : public Actor {
-//public:
-//    Protester();
-//
-//  virtual ~Protester();
-//private:
-//
-//};
+    int getHitPoints();
+    void setHitPoints(int hitPoints);
+    bool isWithinShoutingDistance();
+    bool isAbleToYell();
+    virtual void doSomething();
 
-//class RegularProtester : public Protester {
-//public:
-//    RegularProtester();
-//
-//  virtual ~RegularProtester();
-//private:
-//
-//};
+    virtual ~RegularProtester();
+private:
+    int _hitPoints;
+    int _level;
+    int _ticksToWaitBetweenMoves;
+
+};
+
+/*
+class RegularProtester : public Protester {
+public:
+    RegularProtester(StudentWorld* swR_Protester);
+
+  virtual ~RegularProtester();
+private:
+
+}; */
+
 //class HardcoreProtester : public Protester {
 //public:
 //    HardcoreProtester();
