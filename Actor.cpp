@@ -164,64 +164,127 @@ Ice::~Ice() {
 }
 
 // Protester Class ////////////////////////////////////////////////////////////////////////////////////
-// I'm planning on changing this back to inherting from a base Protestor class.
-RegularProtester::RegularProtester(StudentWorld* swR_Protester) : Actor(IID_PROTESTER, 60, 60, left, 1.0, 0, swR_Protester) {
-    _hitPoints = 5;
+
+Protester::Protester(int image, int hitPoints, StudentWorld* swProtester)
+    : Actor(image, 60, 60, left, 1.0, 0, swProtester) {
+    GraphObject::setVisible(true);
+    _swProtester = swProtester;
+    _hitPoints = hitPoints;
+    _image = image;
+    _isLeavingField = false;
     _level = getWorld()->getLevel();
     _ticksToWaitBetweenMoves = std::max(0, 3 - _level / 4);
+    _ticksToWaitBetweenYells = 15;
+    _numSquaresToMoveInCurrentDirection = rand() % (53) + 8; // rand()%(max-min + 1) + min;
 }
 
 // Accessor and Mutator for hitPoints
-int RegularProtester::getHitPoints() {
+int Protester::getHitPoints() {
     return _hitPoints;
 }
-void RegularProtester::setHitPoints(int hitPoints) {
+void Protester::setHitPoints(int hitPoints) {
     _hitPoints = hitPoints;
 }
 
-bool RegularProtester::isWithinShoutingDistance() {
-    // If within 4 units of IceMan and facing in the IceMan's direction.
-    // return true.
-    // else return false.
-    return true;
+// Accessor and Mutator for isLeavingField
+bool Protester::getIsLeavingField() {
+    return _isLeavingField;
 }
 
-bool RegularProtester::isAbleToYell() {
-    return true;
+void Protester::setIsLeavingField(bool isLeavingField) {
+    _isLeavingField = isLeavingField;
 }
 
-void RegularProtester::doSomething() {
+bool Protester::isWithinShoutingDistance() {
+    // This may not be 100% correct yet as I'm not entirely sure what the expected functionality of this is supposed to be. Once 
+    // the protester can track the iceMan I should be able to better match up the exact specifications of how 
+    // this function should work while playing the finished version of the game he sent. :)
+
+    // int iceManDirection = getWorld()->getIceMan()->getDirection();
+
+    int iceManX = getWorld()->getIceMan()->getX();
+    int iceManY = getWorld()->getIceMan()->getY();
+
+    int xDist = abs(iceManX - getX());
+    int yDist = abs(iceManY - getY());
+
+    if (xDist <= 4 && yDist <= 4) { // If (x,y) coords are within 4 or less of IceMan.  
+        switch (getDirection()) {
+        case left:
+            if (iceManX < getX()) // If Protester is facing left toward IceMan. 
+                return true;
+            break;
+        case right:
+            if (iceManX >= getX())
+                return true;
+            break;
+        case up:
+            if (iceManY >= getY())
+                return true;
+            break;
+        case down:
+            if (iceManY <= getY())
+                return true;
+            break;
+        }
+    }
+    return false;
+}
+
+bool Protester::isAbleToMove() {
+    if (_ticksToWaitBetweenMoves <= 0) {
+        _ticksToWaitBetweenMoves = std::max(0, 3 - _level / 4);
+        _ticksToWaitBetweenYells--;
+        return true;
+    }
+    else {
+        _ticksToWaitBetweenMoves--;
+        return false;
+    }
+}
+
+bool Protester::isAbleToYell() {
+    if (_ticksToWaitBetweenYells <= 0) {
+        _ticksToWaitBetweenYells = 15;
+        return true;
+    }
+    else {
+        return false;
+    }
+
+}
+
+void Protester::doSomething() { // Very unfinished still.
     if (!this->getState()) // If dead, return immediately.
         return;
 
-
-    else if (_ticksToWaitBetweenMoves != 0) {
-        --_ticksToWaitBetweenMoves;
+    else if (!isAbleToMove()) { // If in rest state, return immediately and decrement ticks left to wait.
         return;
     }
-    else if (_hitPoints == 0) {
-        // code to have protester leave field.
+
+    else if (_hitPoints == 0) { // Have Protester leave the field.
     }
 
-
+    else if (isWithinShoutingDistance() && isAbleToYell()) { // Shout at iceMan.
+        this->getWorld()->playSound(SOUND_PROTESTER_YELL);
+        return;
+    }
+    return;
 }
 
-RegularProtester::~RegularProtester() {
+Protester::~Protester() {
 
 }
-
 // Regular Protester Class ////////////////////////////////////////////////////////////////////////////
-/*
-RegularProtester::RegularProtester(StudentWorld* swR_Protester){
-    : Actor(IID_PROTESTER, 60, 60, left, 1.0, 0, swR_Protester)
 
+RegularProtester::RegularProtester(StudentWorld* swRegProtester)
+    : Protester(IID_PROTESTER, 5, swRegProtester) {
+    //_hitPoints = 5;
 }
 
 RegularProtester::~RegularProtester() {
 
 }
-
-*/
 //////Goodie Class//////////////////////////////////////////////////////////////////////////
 
 //Goodie::Goodie(): Actor() {

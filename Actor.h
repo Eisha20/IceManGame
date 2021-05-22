@@ -64,33 +64,48 @@ private:
 };
 
 /******************************************PROTESTER HIERARCHY*****************************/
-class RegularProtester : public Actor {
+
+class Protester : public Actor {
 public:
-    RegularProtester(StudentWorld* swProtester);
+    Protester(int image, int hitPoints, StudentWorld* sw_Protester);
 
     int getHitPoints();
     void setHitPoints(int hitPoints);
+
+    bool getIsLeavingField();
+    void setIsLeavingField(bool isLeavingField);
     bool isWithinShoutingDistance();
+    bool isAbleToMove();
     bool isAbleToYell();
     virtual void doSomething();
 
+    virtual ~Protester();
+
+private:
+    StudentWorld* _swProtester;
+    int _ticksToWaitBetweenMoves;
+    int _ticksToWaitBetweenYells;
+    int _hitPoints;
+    int _image;
+    int _level;
+    int _numSquaresToMoveInCurrentDirection;
+    bool _isLeavingField;
+};
+
+
+class RegularProtester : public Protester {
+public:
+    RegularProtester(StudentWorld* swRegProtester);
+
+
+
+
     virtual ~RegularProtester();
 private:
-    int _hitPoints;
-    int _level;
-    int _ticksToWaitBetweenMoves;
+
 
 };
 
-/*
-class RegularProtester : public Protester {
-public:
-    RegularProtester(StudentWorld* swR_Protester);
-
-  virtual ~RegularProtester();
-private:
-
-}; */
 
 //class HardcoreProtester : public Protester {
 //public:

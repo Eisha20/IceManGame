@@ -29,11 +29,13 @@ public:
 
     void makeGoodies();
 
-    void makeRegularProtesters();
+    //void makeRegularProtesters();
 
     void makeStatString();
     bool isIcePresent(int x, int y);
     void destroyIce(int x, int y);
+    IceMan* getIceMan();
+    bool timeToCreateNewProtester();
 
     virtual ~StudentWorld();
 
@@ -43,7 +45,8 @@ private:
     //(x, y) coordinate: column, row
     Ice* iceCube[VIEW_WIDTH][VIEW_HEIGHT - 4];//an array of ice* so that we can access the objects. 
     std::vector <Actor*> goodies;
-    RegularProtester* regularProtester;
+    int _ticksSinceLastProtester;
+    int _numProtesters;
 };
 
 #endif // STUDENTWORLD_H_

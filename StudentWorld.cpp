@@ -10,12 +10,13 @@ GameWorld* createStudentWorld(string assetDir) {
 
 StudentWorld::StudentWorld(std::string assetDir)
     : GameWorld(assetDir), iceMan(nullptr) {
+    _ticksSinceLastProtester = 0;
+    _numProtesters = 0;
 }
 
 int StudentWorld::init() {
     makeIceMan();
     makeIceCubes();
-    makeRegularProtesters();
 
     // According to the manual (P. 16), keep remainder of game objects (Protestors, Gold Nuggets, Oil,
     // Etc.) within a single STL collection such as a list or vector.
@@ -32,6 +33,7 @@ int StudentWorld::move() {
     if (iceMan->getState()) {//if iceMan is alive then call do something 
         iceMan->doSomething();
 
+
         if (!(iceMan->getState())) {  // Actor is dead.
             decLives();
             return GWSTATUS_PLAYER_DIED;
@@ -39,6 +41,18 @@ int StudentWorld::move() {
 
         if (iceMan->getBarrels() == 0) // There may be a cleaner indicator for the end of a level, but this is a placeholder.
             return GWSTATUS_FINISHED_LEVEL;
+    }
+
+    // As we begin to add if statements here for dynamically allocating new goodies I was thinking we could push them into the
+    // goodie vector from there perhaps and then use this to call their doSomething()'s.
+    for (auto it = goodies.begin(); it != goodies.end(); ++it) {
+        (*it)->doSomething();
+    }
+
+    if (timeToCreateNewProtester()) {
+        // Still need to calculate probability for desired protester to be created.
+        Actor* protester = new RegularProtester(this);
+        goodies.push_back(protester);
     }
 
     return GWSTATUS_CONTINUE_GAME;
@@ -103,10 +117,6 @@ void StudentWorld::makeIceCubes() { // Creates Ice Field.
     */
 }
 
-void StudentWorld::makeRegularProtesters() {
-    regularProtester = new RegularProtester(this);
-}
-
 void StudentWorld::makeGoodies() {
 
 }
@@ -159,6 +169,28 @@ bool StudentWorld::isIcePresent(int x, int y) {
 void StudentWorld::destroyIce(int x, int y) {
     delete iceCube[x][y];
     iceCube[x][y] = nullptr;
+}
+
+IceMan* StudentWorld::getIceMan() {
+    return iceMan;
+}
+
+
+bool StudentWorld::timeToCreateNewProtester() {
+    int temp1 = (200 - getLevel());
+    int temp2 = 2 + (1.5 * getLevel());
+    int maxProtesters = std::min(15, temp2);
+
+    if (_ticksSinceLastProtester <= 0 && _numProtesters <= maxProtesters) {
+        _ticksSinceLastProtester = std::max(25, temp1);
+        _numProtesters++;
+        return true;
+    }
+    else {
+        _ticksSinceLastProtester--;
+        return false;
+    }
+
 }
 
 StudentWorld::~StudentWorld() {
