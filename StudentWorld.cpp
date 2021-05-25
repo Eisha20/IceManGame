@@ -54,7 +54,22 @@ int StudentWorld::move() {
         Actor* protester = new RegularProtester(this);
         goodies.push_back(protester);
     }
-
+    
+    //delete all dead goodies 
+    vector<Actor*>::iterator temp;
+    for (auto p = goodies.begin(); p != end(goodies); p++) {
+        if (!goodies.empty()) {
+            if (!p[0]->getState()) {
+                delete p[0];
+                temp = goodies.erase(p);
+                if (goodies.empty())
+                    break;
+                --temp;
+                p = temp;
+            }
+        }
+    }
+    
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -71,12 +86,15 @@ void StudentWorld::cleanUp() {
     }
 
     //delete all goodies
-    vector<Actor*>::iterator temp;
     for (auto p = goodies.begin(); p != end(goodies); p++) {
-        delete (*p);
-        temp = goodies.erase(p);
-        --temp;
-        p = temp;
+        if (!goodies.empty()) {
+            delete p[0];
+            temp = goodies.erase(p);
+            if (goodies.empty())
+                break;
+            --temp;
+            p = temp;
+        }
     }
 
 }
@@ -107,18 +125,15 @@ void StudentWorld::makeIceCubes() { // Creates Ice Field.
             iceCube[column][row] = new Ice(column, row, this);
         }
     }
-    /*
-    I totally forgot to tell you but I made some changes to this function too.
-        - I removed - 4 from the for loop (line 71) because I believe the instructions
-          said that the ice should fill the entire width
-        - I added 4*4 ice to the end of the empty tunnel. I didn't
-          come across anyting in the instructions that said that, however, the game does have it
-          in there. I'll leave it up to you to decide if we should keep it or not.
-    */
+   
 }
 
 void StudentWorld::makeGoodies() {
 
+}
+
+void StudentWorld::makeRegularProtesters() {
+    regularProtester = new RegularProtester(this);
 }
 
 void StudentWorld::makeStatString() {
@@ -205,4 +220,9 @@ StudentWorld::~StudentWorld() {
         delete iceMan;
         iceMan = nullptr;
     }
+}
+
+void StudentWorld::makeBoulders() {
+    Actor* ptr = new Boulder(20, 20, this);
+    goodies.push_back(ptr);
 }
