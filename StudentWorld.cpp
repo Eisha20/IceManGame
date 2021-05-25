@@ -181,7 +181,7 @@ bool StudentWorld::timeToCreateNewProtester() {
     int temp2 = 2 + (1.5 * getLevel());
     int maxProtesters = std::min(15, temp2);
 
-    if (_ticksSinceLastProtester <= 0 && _numProtesters <= maxProtesters) {
+    if (_ticksSinceLastProtester <= 0 && _numProtesters < maxProtesters) {
         _ticksSinceLastProtester = std::max(25, temp1);
         _numProtesters++;
         return true;
