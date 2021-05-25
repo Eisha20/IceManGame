@@ -28,12 +28,12 @@ public:
     void makeIceCubes();
 
     void makeGoodies();
-
     //void makeRegularProtesters();
 
     void makeStatString();
     bool isIcePresent(int x, int y);
     void destroyIce(int x, int y);
+    void makeBoulders();
     IceMan* getIceMan();
     bool timeToCreateNewProtester();
 
