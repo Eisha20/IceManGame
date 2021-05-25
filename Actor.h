@@ -107,6 +107,16 @@ private:
 };
 
 
+/*
+class RegularProtester : public Protester {
+public:
+    RegularProtester(StudentWorld* swR_Protester);
+
+  virtual ~RegularProtester();
+private:
+
+}; */
+
 //class HardcoreProtester : public Protester {
 //public:
 //    HardcoreProtester();
@@ -135,15 +145,17 @@ private:
 //private:
 //};
 //
-//class Boulder: public Goodies {
-//public:
-//    Boulder();
-//
-//  virtual ~Boulder();
-//private:
-//
-//};
-//
+class Boulder : public Actor {
+public:
+    Boulder(int x, int y, StudentWorld* swBoulder);
+    virtual void doSomething();
+    bool isIcePresentBelow(int x, int y);
+    void fall();
+    virtual ~Boulder();
+private:
+    bool _stable;
+};
+
 //class Sonar : public Goodies {
 //public:
 //    Sonar();
