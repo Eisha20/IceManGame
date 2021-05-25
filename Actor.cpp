@@ -287,6 +287,57 @@ RegularProtester::~RegularProtester() {
 }
 //////Goodie Class//////////////////////////////////////////////////////////////////////////
 
-//Goodie::Goodie(): Actor() {
-//
-//}
+Boulder::Boulder(int x, int y, StudentWorld* swBoulder) : Actor(IID_BOULDER, x, y, down, 1.0,
+    1, swBoulder) {
+    _stable = true;
+}
+
+void Boulder::doSomething() {
+    static int wait = 0;
+    if (!getState())
+        return;
+    if (_stable == true) {
+        if (isIcePresentBelow(this->getX(), this->getY()))
+            return;
+        else {
+            if (wait != 30) {
+                ++wait;
+                return;
+            }
+            else {
+                fall();
+            }
+        }
+    }
+}
+
+void Boulder::fall() {
+    this->getWorld()->playSound(SOUND_FALLING_ROCK);
+    int x = getX();
+    int y = getY();
+    while (getState()) {
+        if (isIcePresentBelow(x, y)) {
+            setState(false);
+        }
+        //have to add check for boulder
+        else {
+            moveTo(x, y - 1);
+            y--;
+        }
+    }
+    return;
+}
+
+//checks if ice is present in any of the four columns in the row below the x,y position
+bool Boulder::isIcePresentBelow(int x, int y) {
+    bool present = false;
+    for (int i = 0; i < 4; i++) {
+        if (getWorld()->isIcePresent(x + i, y - 1))
+            present = true;
+    }
+    return present;
+}
+
+Boulder::~Boulder() {
+
+}
