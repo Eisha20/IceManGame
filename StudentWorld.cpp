@@ -18,9 +18,6 @@ int StudentWorld::init() {
     makeIceMan();
     makeIceCubes();
 
-    // According to the manual (P. 16), keep remainder of game objects (Protestors, Gold Nuggets, Oil,
-    // Etc.) within a single STL collection such as a list or vector.
-    //
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -49,11 +46,7 @@ int StudentWorld::move() {
         (*it)->doSomething();
     }
 
-    if (timeToCreateNewProtester()) {
-        // Still need to calculate probability for desired protester to be created.
-        Actor* protester = new RegularProtester(this);
-        goodies.push_back(protester);
-    }
+    makeProtesters();
 
     //delete all dead goodies 
     vector<Actor*>::iterator temp;
@@ -129,6 +122,14 @@ void StudentWorld::makeIceCubes() { // Creates Ice Field.
 
 }
 
+void StudentWorld::makeProtesters() {
+    if (timeToCreateNewProtester()) {
+        // Still need to calculate probability for desired protester to be created.
+        Actor* protester = new RegularProtester(this);
+        goodies.push_back(protester);
+    }
+}
+
 void StudentWorld::makeGoodies() {
 
 }
@@ -191,8 +192,8 @@ IceMan* StudentWorld::getIceMan() {
 
 bool StudentWorld::timeToCreateNewProtester() {
     int temp1 = (200 - getLevel());
-    int temp2 = 2 + (1.5 * getLevel());
-    int maxProtesters = std::min(15, temp2);
+    double temp2 = 2 + (1.5 * getLevel());
+    double maxProtesters = std::min(15.0, temp2);
 
     if (_ticksSinceLastProtester <= 0 && _numProtesters < maxProtesters) {
         _ticksSinceLastProtester = std::max(25, temp1);

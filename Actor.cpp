@@ -103,6 +103,7 @@ void IceMan::doSomething() {
     }
 
 }
+
 //acessor and mutator for barrels
 int IceMan::getBarrels() {
     return _barrelsLeft;
@@ -264,6 +265,9 @@ void Protester::doSomething() { // Very unfinished still.
     }
 
     else if (_hitPoints == 0) { // Have Protester leave the field.
+        if (getX() == 60 && getY() == 60) {
+
+        }
     }
 
     else if (isWithinShoutingDistance() && isAbleToYell()) { // Shout at iceMan.
@@ -280,7 +284,6 @@ Protester::~Protester() {
 
 RegularProtester::RegularProtester(StudentWorld* swRegProtester)
     : Protester(IID_PROTESTER, 5, swRegProtester) {
-    //_hitPoints = 5;
 }
 
 RegularProtester::~RegularProtester() {

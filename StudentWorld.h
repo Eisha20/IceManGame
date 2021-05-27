@@ -26,6 +26,7 @@ public:
     void makeIceMan();
 
     void makeIceCubes();
+    void makeProtesters();
 
     void makeGoodies();
     //void makeRegularProtesters();
