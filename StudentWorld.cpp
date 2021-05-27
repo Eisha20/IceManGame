@@ -54,7 +54,7 @@ int StudentWorld::move() {
         Actor* protester = new RegularProtester(this);
         goodies.push_back(protester);
     }
-    
+
     //delete all dead goodies 
     vector<Actor*>::iterator temp;
     for (auto p = goodies.begin(); p != end(goodies); p++) {
@@ -69,7 +69,7 @@ int StudentWorld::move() {
             }
         }
     }
-    
+
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -86,6 +86,7 @@ void StudentWorld::cleanUp() {
     }
 
     //delete all goodies
+    vector<Actor*>::iterator temp;
     for (auto p = goodies.begin(); p != end(goodies); p++) {
         if (!goodies.empty()) {
             delete p[0];
@@ -125,16 +126,13 @@ void StudentWorld::makeIceCubes() { // Creates Ice Field.
             iceCube[column][row] = new Ice(column, row, this);
         }
     }
-   
+
 }
 
 void StudentWorld::makeGoodies() {
 
 }
 
-void StudentWorld::makeRegularProtesters() {
-    regularProtester = new RegularProtester(this);
-}
 
 void StudentWorld::makeStatString() {
     //format: Lvl: _ Lives: _ Hlth: _ Wtr: _ Gld: _ Oil Left: _ Sonar: _ Scr: _ 
@@ -142,7 +140,7 @@ void StudentWorld::makeStatString() {
     int level = getLevel();
     int lives = getLives();
     int score = getScore();
-    int health = iceMan->getHealth();
+    int health = iceMan->getHitPoints();
     int water = iceMan->getWater();
     int gold = iceMan->getGoldNuggets();
     int Sonar = iceMan->getSonar();

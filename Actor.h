@@ -30,7 +30,7 @@ public:
     IceMan(StudentWorld* swIceMan);
     void doSomething();
 
-    int getHealth();
+    int getHitPoints();
     void decHealth(int health);
     int getSonar();
     void setSonar(int sonar);
@@ -44,7 +44,7 @@ public:
 
 private:
 
-    int _health;
+    int _hitPoints;
     int _water;
     int _sonar;
     int _goldNuggets;

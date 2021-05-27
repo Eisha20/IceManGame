@@ -36,7 +36,7 @@ IceMan::IceMan(StudentWorld* swIceMan) : Actor(IID_PLAYER, 30, 60, right, 1.0, 0
     _water = 5;
     _sonar = 1;
     _goldNuggets = 0;
-    _health = 100;
+    _hitPoints = 10;
 }
 
 void IceMan::doSomething() {
@@ -112,14 +112,15 @@ void IceMan::setBarrels(int barrelsLeft) {
 }
 
 //acessor and mutator for health
-int IceMan::getHealth() {
-    return _health;
+int IceMan::getHitPoints() {
+    return _hitPoints;
 }
 void IceMan::decHealth(int health) {
-    /* if (health != 0) {
-         _health =
-     }*/
-
+    if (_hitPoints != 0) {
+        _hitPoints -= health;
+    }
+    if (_hitPoints == 0)
+        setState(false);
 }
 
 //acessor and mutator for water
