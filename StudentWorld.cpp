@@ -17,7 +17,10 @@ StudentWorld::StudentWorld(std::string assetDir)
 int StudentWorld::init() {
     makeIceMan();
     makeIceCubes();
-
+    makeBoulders();
+    // According to the manual (P. 16), keep remainder of game objects (Protestors, Gold Nuggets, Oil,
+    // Etc.) within a single STL collection such as a list or vector.
+    //
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -55,9 +58,8 @@ int StudentWorld::move() {
             if (!p[0]->getState()) {
                 delete p[0];
                 temp = goodies.erase(p);
-                if (goodies.empty())
-                    break;
-                --temp;
+                if (temp != goodies.begin())
+                    --temp;
                 p = temp;
             }
         }
@@ -68,7 +70,7 @@ int StudentWorld::move() {
 
 
 void StudentWorld::cleanUp() {
-    //delete iceMan
+
     delete iceMan;
     iceMan = nullptr;
     //delete all ice objects
@@ -84,9 +86,8 @@ void StudentWorld::cleanUp() {
         if (!goodies.empty()) {
             delete p[0];
             temp = goodies.erase(p);
-            if (goodies.empty())
-                break;
-            --temp;
+            if (temp != goodies.begin())
+                --temp;
             p = temp;
         }
     }
@@ -96,6 +97,8 @@ void StudentWorld::cleanUp() {
 void StudentWorld::makeIceMan() { // Creates Ice Man.
     iceMan = new IceMan(this);
 }
+
+
 
 void StudentWorld::makeIceCubes() { // Creates Ice Field.
 
@@ -141,6 +144,7 @@ void StudentWorld::makeStatString() {
     int level = getLevel();
     int lives = getLives();
     int score = getScore();
+    int oilLeft = iceMan->getBarrels();
     int health = iceMan->getHitPoints();
     int water = iceMan->getWater();
     int gold = iceMan->getGoldNuggets();
@@ -166,7 +170,6 @@ void StudentWorld::makeStatString() {
 
     setGameStatText(gameStat);
 }
-
 
 bool StudentWorld::isIcePresent(int x, int y) {
     if (y < (VIEW_HEIGHT - 4)) { //if out of bounds
@@ -224,4 +227,32 @@ StudentWorld::~StudentWorld() {
 void StudentWorld::makeBoulders() {
     Actor* ptr = new Boulder(20, 20, this);
     goodies.push_back(ptr);
+
+    Actor* ptr1 = new Boulder(19, 10, this);
+    goodies.push_back(ptr1);
+}
+bool StudentWorld::boulderPresent(int x, int y) {
+    //find boulder
+    //check if it present at x,y
+    for (const auto p : goodies) {
+        if (p->getID() == IID_BOULDER) {
+            for (int i = -2; i < 3; i++) {
+                if ((p->getX() + i) == x && p->getY() == (y - 3))
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+void StudentWorld::annoyProtestors(int x, int y) {
+    for (const auto p : goodies) {
+        if (p->getID() == IID_PROTESTER || p->getID() == IID_HARD_CORE_PROTESTER) {
+            double distance = sqrt((p->getX() - x) * (p->getX() - x) + (p->getY() - y) * (p->getY() - y));
+            if (distance <= 3) {
+                p->annoy(100);//needs to be changed based on the annoy implimentation of protestor class
+            }
+
+        }
+    }
 }

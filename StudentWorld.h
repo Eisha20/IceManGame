@@ -27,9 +27,7 @@ public:
 
     void makeIceCubes();
     void makeProtesters();
-
     void makeGoodies();
-    //void makeRegularProtesters();
 
     void makeStatString();
     bool isIcePresent(int x, int y);
@@ -37,7 +35,8 @@ public:
     void makeBoulders();
     IceMan* getIceMan();
     bool timeToCreateNewProtester();
-
+    bool boulderPresent(int x, int y);
+    void annoyProtestors(int x, int y);
     virtual ~StudentWorld();
 
 private:

@@ -3,7 +3,6 @@
 
 #include "GraphObject.h"
 
-// Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 
 class StudentWorld;
 
@@ -12,6 +11,7 @@ public:
     Actor(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth, StudentWorld* swActor);
 
     virtual void doSomething() = 0; //pure virtual function
+    virtual void annoy(int) = 0;
     void setState(bool state);
     bool getState();
     virtual StudentWorld* getWorld();
@@ -25,12 +25,24 @@ private:
 
 
 /*************************************************************************************************/
-class IceMan : public Actor {
+class Person : public Actor {
+public:
+    Person(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
+        StudentWorld* swActor, int hitPoints);
+
+    int getHitPoints();
+    void setHitPoints(int hitPoints);
+    ~Person();
+private:
+    int _hitPoints;
+};
+///////////// ICE MAN CLASS  //////////////////////////////////////////////////////////
+
+class IceMan : public Person {
 public:
     IceMan(StudentWorld* swIceMan);
     void doSomething();
-    int getHitPoints();
-    void decHealth(int health);
+    virtual void annoy(int annoyValue);
     int getSonar();
     void setSonar(int sonar);
     int getWater();
@@ -39,11 +51,10 @@ public:
     void setGoldNuggets(int goldNuggets);
     int getBarrels();
     void setBarrels(int barrelsLeft);
+    void reduceBarrels();
     virtual ~IceMan();
 
 private:
-
-    int _hitPoints;
     int _water;
     int _sonar;
     int _goldNuggets;
@@ -55,6 +66,7 @@ class Ice : public Actor {
 public:
     Ice(int startX, int startY, StudentWorld* swIce);
     void doSomething();
+    void annoy(int);
 
     virtual ~Ice();
 
@@ -64,28 +76,27 @@ private:
 
 /******************************************PROTESTER HIERARCHY*****************************/
 
-class Protester : public Actor {
+class Protester : public Person {
 public:
-    Protester(int image, int hitPoints, StudentWorld* sw_Protester);
+    Protester(int image, int hitPoints, StudentWorld* sw_Protester, bool state);
 
-    int getHitPoints();
-    void setHitPoints(int hitPoints);
     bool getIsLeavingField();
     void setIsLeavingField(bool isLeavingField);
     bool isWithinShoutingDistance();
     bool isAbleToMove();
     bool isAbleToYell();
+    bool isIceManInClearSight();
+    bool isBlocked();
+    void moveOneSquare();
+    void randomDirection();
     virtual void doSomething();
+
     virtual ~Protester();
 
-protected:
-
 private:
-    StudentWorld* _swProtester;
     int _ticksToWaitBetweenMoves;
     int _ticksToWaitBetweenYells;
     int _image;
-    int _hitPoints;
     int _level;
     int _numSquaresToMoveInCurrentDirection;
     bool _isLeavingField;
@@ -95,7 +106,7 @@ private:
 class RegularProtester : public Protester {
 public:
     RegularProtester(StudentWorld* swRegProtester);
-
+    virtual void annoy(int);
 
 
 
@@ -104,6 +115,17 @@ private:
 
 
 };
+
+
+/*
+class RegularProtester : public Protester {
+public:
+    RegularProtester(StudentWorld* swR_Protester);
+
+  virtual ~RegularProtester();
+private:
+
+}; */
 
 //class HardcoreProtester : public Protester {
 //public:
@@ -117,33 +139,47 @@ private:
 //
 ///******************************************GOODIES HIERARCHY****************************/
 //
-//class Goodie : public Actor {
-//public:
-//    Goodie();
-//
-//  virtual ~Goodie();
-//private:
-//
-//};
+class Goodie : public Actor {
+public:
+    Goodie(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
+        StudentWorld* swActor);
+    void annoy(int);
+    virtual bool checkRadius3(int x, int y, int checkX, int checkY);
+    virtual bool checkRadius4(int x, int y, int checkX, int checkY);
+    virtual ~Goodie();
+private:
+};
 
-//class OilBarrel : public Goodies {
-//public:
-//    OilBarrel();
-//  virtual ~OilBarrel();
-//private:
-//};
-//
-class Boulder : public Actor {
+class OilBarrel : public Goodie {
+public:
+    OilBarrel(int x, int y, StudentWorld* swOilBarrel);
+    virtual void doSomething();
+    virtual ~OilBarrel();
+private:
+};
+
+class Boulder : public Goodie {
 public:
     Boulder(int x, int y, StudentWorld* swBoulder);
     virtual void doSomething();
-    bool isIcePresentBelow(int x, int y);
-    void fall();
     virtual ~Boulder();
+
 private:
+    void fall();
+    bool isIcePresentBelow(int x, int y);
     bool _stable;
 };
 
+
+
+class Squirt : public Goodie {
+public:
+    Squirt(int x, int y, Direction dir, StudentWorld* swWorld);
+    virtual void doSomething();
+    virtual ~Squirt();
+private:
+    int _travelDis;
+};
 //class Sonar : public Goodies {
 //public:
 //    Sonar();
