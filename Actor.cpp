@@ -14,6 +14,15 @@ Actor::Actor(int imageID, int startX, int startY, Direction dir, double size, un
     _swActor = swActor;
 }
 
+//checks if checkX, checkY is within a specified radius to x,y 
+bool Actor::checkRadius(int x, int y, int checkX, int checkY, int radius) {
+    double distance = sqrt((checkX - x) * (checkX - x) + (checkY - y) * (checkY - y));
+    if (distance <= radius)
+        return true;
+    return false;
+
+}
+
 //accessor and mutator for the state of the Actor
 void Actor::setState(bool state) {
     _state = state;//return state 
@@ -39,6 +48,15 @@ Person::Person(int imageID, int startX, int startY, Direction dir, double size, 
 int Person::getHitPoints() {
     return _hitPoints;
 }
+
+bool Person::isAnnoyable() {
+    return true;
+}
+
+bool Person::canBlock() {
+    return false;
+}
+
 void Person::setHitPoints(int hitPoints) {
     _hitPoints = hitPoints;
 }
@@ -77,7 +95,7 @@ void IceMan::doSomething() {
         case KEY_PRESS_RIGHT:
             if (getDirection() != right)
                 setDirection(right);
-            else if (getX() < VIEW_WIDTH)
+            else if (getX() < VIEW_WIDTH - 4)
                 moveTo(getX() + 1, getY());
             break;
 
@@ -97,28 +115,49 @@ void IceMan::doSomething() {
 
         case KEY_PRESS_SPACE:
             // add a squirt in front of player.
-            break;
+            if (getWater() > 0) {
+                getWorld()->playSound(SOUND_PLAYER_SQUIRT);
+                switch (getWorld()->getIceMan()->getDirection()) {
+                case up:
+                    getWorld()->makeSquirt(x, y + 4);
+                    break;
+                case down:
+                    getWorld()->makeSquirt(x, y - 4);
+                    break;
+                case left:
+                    getWorld()->makeSquirt(x - 4, y);
+                    break;
+                case right:
+                    getWorld()->makeSquirt(x + 4, y);
+                    break;
+                }
+                break;
 
         case KEY_PRESS_TAB:
             // add here
+            if (getGoldNuggets() > 0) {
+                getWorld()->makeDroppedGoldNugget();
+                getWorld()->getIceMan()->decGoldNuggets();
+            }
             break;
 
         case KEY_PRESS_ESCAPE:
             // add here
             break;
-        }
-    }
-
-    //Remove ice if ice man's location overlaps with ice objects
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            if (world->isIcePresent(x + i, y + j)) {
-                world->destroyIce(x + i, y + j);
-                world->playSound(SOUND_DIG);
             }
         }
-    }
 
+        //Remove ice if ice man's location overlaps with ice objects
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (world->isIcePresent(x + i, y + j)) {
+                    world->destroyIce(x + i, y + j);
+                    world->playSound(SOUND_DIG);
+                }
+            }
+        }
+
+    }
 }
 
 //annoy
@@ -131,6 +170,7 @@ void IceMan::annoy(int annoyValue) {
     if (getHitPoints() <= 0)
         setState(false);
 }
+
 //acessor and mutator for barrels
 int IceMan::getBarrels() {
     return _barrelsLeft;
@@ -147,24 +187,32 @@ void IceMan::reduceBarrels() {
 int IceMan::getWater() {
     return _water;
 }
-void IceMan::setWater(int water) {
-    _water = water;
+void IceMan::decWater() {
+    _water--;
 }
-
+void IceMan::incWater(int num) {
+    _water += num;
+}
 //acessor and mutator for sonar
 int IceMan::getSonar() {
     return _sonar;
 }
-void IceMan::setSonar(int sonar) {
-    _sonar = sonar;
+void IceMan::decSonar() {
+    _sonar--;
 }
-
+void IceMan::incSonar() {
+    _sonar++;
+}
 //acessor and mutator for goldNuggets
 int IceMan::getGoldNuggets() {
     return _goldNuggets;
 }
-void IceMan::setGoldNuggets(int goldNuggets) {
-    _goldNuggets = goldNuggets;
+void IceMan::incGoldNuggets() {
+    _goldNuggets++;
+}
+
+void IceMan::decGoldNuggets() {
+    _goldNuggets--;
 }
 
 IceMan::~IceMan() {
@@ -183,6 +231,14 @@ void Ice::annoy(int) {
     //ice cannot be annnoyed
 }
 
+bool Ice::canBlock() {
+    return false;// it can block but might not be required to return true for implimentation
+}
+bool Ice::isAnnoyable() {
+    return false;
+}
+
+
 Ice::~Ice() {
     this->setVisible(false);
 }
@@ -198,6 +254,7 @@ Protester::Protester(int image, int hitPoints, StudentWorld* swProtester, bool s
     _ticksToWaitBetweenMoves = std::max(0, 3 - _level / 4);
     _ticksToWaitBetweenYells = 15;
     _numSquaresToMoveInCurrentDirection = rand() % (53) + 8; // rand()%(max-min + 1) + min;
+    _ticksBetweenPerpendicularTurns = 200;
 }
 
 
@@ -217,13 +274,7 @@ bool Protester::isWithinShoutingDistance() {
     int iceManX = getWorld()->getIceMan()->getX();
     int iceManY = getWorld()->getIceMan()->getY();
 
-    // int xDist = abs(iceManX - getX());
-    // int yDist = abs(iceManY - getY());
-
-    double distance = sqrt((iceManX - getX()) * (iceManX - getX()) + (iceManY - getY()) * (iceManY - getY()));
-
-    // if (xDist <= 4 && yDist <= 4) { // If (x,y) coords are within 4 or less of IceMan.  
-    if (distance <= 4) {
+    if (checkRadius(getX(), getY(), iceManX, iceManY, 4)) {
         switch (getDirection()) {
         case left:
             if (iceManX < getX()) // If Protester is facing left toward IceMan. 
@@ -250,6 +301,7 @@ bool Protester::isAbleToMove() {
     if (_ticksToWaitBetweenMoves <= 0) {
         _ticksToWaitBetweenMoves = std::max(0, 3 - _level / 4);
         _ticksToWaitBetweenYells--;
+        _ticksBetweenPerpendicularTurns--;
         return true;
     }
     else {
@@ -266,12 +318,17 @@ bool Protester::isAbleToYell() {
     else {
         return false;
     }
-
 }
 
 bool Protester::isIceManInClearSight() {
-    int iceManX = getWorld()->getIceMan()->getX();
+    int iceManX = getWorld()->getIceMan()->getX(); // create a private variable for these
     int iceManY = getWorld()->getIceMan()->getY();
+
+    //if (checkRadius(getX(), getY(), iceManX, iceManY, 4)) { // if within a radius of 4. Spec says so but im unsure
+      //  return false;
+    //}
+    //if (!canMoveTowardIceMan())
+       // return false;
 
     int i = 0;
     if (getX() == iceManX) { // If in same column...
@@ -298,12 +355,11 @@ bool Protester::isIceManInClearSight() {
             return false;
         }
     }
-
     if (getY() == iceManY) { // If in same row...
         if (getX() > iceManX) { //...and protester is right of iceman...
-            while (!(getWorld()->isIcePresent(getX() - i, getY()))) { // ...check if ice blocks path btwn them.
+            while (!(getWorld()->isIcePresent(getX() - i, getY()))) { // ...check if ice blocks path btwn them. // -3 works but crashes
                 ++i;
-                if (getX() - i == iceManX) { //  If path is clear.
+                if (getX() - i == iceManX) { //  If path is clear. // -3 works but crashes
                     setDirection(left);
                     moveTo(getX() - 1, getY());
                     return true;
@@ -324,6 +380,90 @@ bool Protester::isIceManInClearSight() {
         }
     }
     return false;
+
+}
+
+bool Protester::canMoveTowardIceMan() {
+
+    int iceManX = getWorld()->getIceMan()->getX();
+    int iceManY = getWorld()->getIceMan()->getY();
+    /*
+    If a protester is to the right of iceman by 4 or less spaces(aka iceManX + 4 >= protesterX) and protesterY == iceManY(aka on same level)
+        return false
+        */
+    return false; // testing
+
+
+    if (iceManX + 4 >= getX())// && iceManY == getY())
+        return false;
+    return true;
+}
+
+
+bool Protester::canPerpendicularlyMove() {
+
+    if (_ticksBetweenPerpendicularTurns > 0)
+        return false;
+
+    int randomNumber = (rand() % 2) + 1; // random num btwn 1 and 2.
+    bool noIceLeftward = !(getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3));
+    bool noIceRightward = !(getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3));
+    bool noIceAbove = !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4));
+    bool noIceBelow = !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1));
+
+    if (getDirection() == left || getDirection() == right) {
+        if (noIceAbove && noIceBelow && getY() < VIEW_HEIGHT - 4 && getY() > 0) { // If able to move left and right randomly select a direction
+            // check boulders
+            if (randomNumber == 1) { // move up
+                setDirection(up);
+                moveOneSquare();
+            }
+            else {  // randomNumber == 2 // move down
+                setDirection(down);
+                moveOneSquare();
+            }
+        }
+        else if (noIceAbove && getY() < VIEW_HEIGHT - 4) { // move up
+            setDirection(up);
+            moveOneSquare();
+        }
+        else if (noIceBelow && getY() > 0) { // move down
+            setDirection(down);
+            moveOneSquare();
+        }
+        else { // ice above and below
+            return false;
+        }
+        return true;
+    }
+
+    else if (getDirection() == up || getDirection() == down) {
+        if (noIceLeftward && noIceRightward && getX() > 0 && getX() < VIEW_WIDTH - 4) {
+            // check boulders
+            if (randomNumber == 1) { // move left
+                setDirection(left);
+                moveOneSquare();
+            }
+            else {  // randomNumber == 2 // move right
+                setDirection(right);
+                moveOneSquare();
+            }
+        }
+        else if (noIceLeftward && getX() > 0) { // move left
+            setDirection(left);
+            moveOneSquare();
+        }
+        else if (noIceRightward && getX() < VIEW_WIDTH - 4) { // move right
+            setDirection(right);
+            moveOneSquare();
+        }
+        else { // ice on both sides
+            return false;
+        }
+        return true;
+    }
+
+    return true;
 }
 
 bool Protester::isBlocked() {
@@ -332,28 +472,30 @@ bool Protester::isBlocked() {
     case left:
         if (getX() <= 0) // blocked by edge of map
             return true;
-        if (getWorld()->isIcePresent(getX() - 1, getY())) // if ice is to left
+        if (getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3)) // if ice is to left
             return true;
+        //if (getWorld()->boulderPresent(getX() - 1, getY()))
+           // return true;
         // Need some sort of check for goodies.
         break;
     case right:
-        if (!(getX() < VIEW_WIDTH)) // blocked by edge of map
+        if (!(getX() < VIEW_WIDTH - 4)) // blocked by edge of map 
             return true;
-        if (getWorld()->isIcePresent(getX() + 1, getY())) // if ice is to right
+        if (getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3)) // if ice is to right
             return true;
         // Need some sort of check for goodies.
         break;
     case up:
         if (!(getY() < VIEW_HEIGHT - 4)) // blocked by edge of map
             return true;
-        if (getWorld()->isIcePresent(getX(), getY() + 1)) // if ice is above
+        if (getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4)) // if ice is above
             return true;
         break;
         // Need some sort of check for goodies.
     case down:
         if (!(getY() > 0)) // blocked by edge of map
             return true;
-        if (getWorld()->isIcePresent(getX(), getY() - 1)) // if ice is below
+        if (getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1)) // if ice is below
             return true;
         break;
         // Need some sort of check for goodies.
@@ -361,31 +503,33 @@ bool Protester::isBlocked() {
     return false;
 }
 
-void Protester::moveOneSquare() { /*
-if (_numSquaresToMoveInCurrentDirection <= 0) {
+void Protester::moveOneSquare() {
+    if (_numSquaresToMoveInCurrentDirection <= 0) {
         _numSquaresToMoveInCurrentDirection = rand() % (53) + 8; // Reset to new random number.
         randomDirection(); // set direction to a NEW random direction.
-    } */
+    }
 
     switch (getDirection()) { // Move one square.
     case left:
-        if (getX() > 0 && !(getWorld()->isIcePresent(getX() - 1, getY())))
+        if (getX() > 0 && !(getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3))) {
             moveTo(getX() - 1, getY());
+
+        }
         break;
     case right:
-        if (getX() < VIEW_WIDTH && !(getWorld()->isIcePresent(getX() + 1, getY())))
+        if (getX() < VIEW_WIDTH - 4 && !(getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3)))
             moveTo(getX() + 1, getY());
         break;
     case up:
-        if (getY() < VIEW_HEIGHT - 4 && !(getWorld()->isIcePresent(getX(), getY() + 1)))
+        if (getY() < VIEW_HEIGHT - 4 && !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4)))
             moveTo(getX(), getY() + 1);
         break;
     case down:
-        if (getY() > 0 && !(getWorld()->isIcePresent(getX(), getY() - 1)))
+        if (getY() > 0 && !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1)))
             moveTo(getX(), getY() - 1);
         break;
     }
-    _numSquaresToMoveInCurrentDirection--;
+    //_numSquaresToMoveInCurrentDirection--;
     return;
 }
 
@@ -399,7 +543,7 @@ void Protester::randomDirection() { // set direction to a NEW random direction.
                 setDirection(left);
             break;
         case 2:
-            if (getX() < VIEW_WIDTH)
+            if (getX() < VIEW_WIDTH - 4)
                 setDirection(right);
             break;
         case 3:
@@ -415,7 +559,7 @@ void Protester::randomDirection() { // set direction to a NEW random direction.
                 setDirection(left);
             break;
         case 2:
-            if (getX() < VIEW_WIDTH)
+            if (getX() < VIEW_WIDTH - 4)
                 setDirection(right);
             break;
         case 3:
@@ -431,7 +575,7 @@ void Protester::randomDirection() { // set direction to a NEW random direction.
                 setDirection(down);
             break;
         case 2:
-            if (getX() < VIEW_WIDTH)
+            if (getX() < VIEW_WIDTH - 4)
                 setDirection(right);
             break;
         case 3:
@@ -459,23 +603,39 @@ void Protester::randomDirection() { // set direction to a NEW random direction.
     return;
 }
 
-void Protester::doSomething() {
-    if (!this->getState()) // If dead, return immediately.
-        return; // 1
+void Protester::doSomething() { // P. 40 
 
-    else if (!isAbleToMove()) { // If in rest state, return immediately and decrement ticks left to wait.
-        return; // 2
+    /*
+     Currently need to:
+     fix movement of protester when in close proximity to iceman
+     breadth first search algorithm
+     handle when protesters are close to boulders
+    */
+
+    //if (getWorld()->isBlockableActorNearby(this, 3)) {
+         //setVisible(false);
+    //}
+
+    //if (getX() == getWorld()->getIceMan()->getX()) // FOR TESTING
+        //setHitPoints(0);
+
+    if (!this->getState()) // If dead, return immediately. // 1.
+        return;
+
+    else if (!isAbleToMove()) { // If in rest state, return immediately and decrement ticks left to wait. // 2
+        return;
     }
 
-    else if (getHitPoints() == 0) { // If dead, have protester leave the field.
-        if (getX() == 60 && getY() == 60) { // If already at exit point...
+    else if (getHitPoints() <= 0) { // If dead, have protester leave the field. // 3
+        if (getX() == 60 && getY() == 60) { // If already at exit point... // A
             this->getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
             setState(false); // Indicator for deletion.
             setVisible(false);
-            return; // 3
+            return;
         }
+        //setVisible(false); // FOR TESTING
 
-        // Else, if not at exit point. annoy
+        // Else, if not at exit point. annoy // B
             // => determine which direction to move based on a queue based maze searching algortihm
             // => move one step toward exit
             // => return
@@ -484,30 +644,38 @@ void Protester::doSomething() {
     //This works
     else if (isWithinShoutingDistance() && isAbleToYell()) { // If able, shout at iceMan. // 4
         this->getWorld()->playSound(SOUND_PROTESTER_YELL); // A
+        // annoy iceman and deduct 2 points from the iceman's hit points, possibly killing the iceman.
+        getWorld()->getIceMan()->annoy(2);
         return;
     }
 
-    else if (isIceManInClearSight()) { // If in clear sight, fn also switches direction toward iceman and moves one square his way. // 5ABCAB
+    else if (isIceManInClearSight()) { // 5ABCAB // && canMoveTowardIceMan(
+        // If in clear sight, fn switches direction toward iceman and moves one square his way. 
         _numSquaresToMoveInCurrentDirection = 0;
         return;
     }
 
 
-    else if (isBlocked()) { // if protester is about to run into an obstacle (ice, goodie,...edge of map?)
-        //randomDirection(); // pick a new direction
+    else if (isBlocked()) { // if protester is about to run into an obstacle (ice, goodie,...edge of map?) // 6
+        //--_numSquaresToMoveInCurrentDirection;
         while (isBlocked()) {
             randomDirection();
         }
+        _numSquaresToMoveInCurrentDirection = rand() % (53) + 8;
         moveOneSquare(); // move one square in this direction 
         return;
     }
 
-    else { // Move one square in current direction
-        // What if facing a wall or ice or goodie.
-        moveOneSquare();
+    else if (canPerpendicularlyMove()) { // 7 // perpendiular stuff
+        _numSquaresToMoveInCurrentDirection = rand() % (53) + 8;
         return;
     }
+
+    else { // 8
+        moveOneSquare();
+    }
     return;
+
 }
 
 Protester::~Protester() {
@@ -528,33 +696,22 @@ RegularProtester::~RegularProtester() {
 //////Goodie Class//////////////////////////////////////////////////////////////////////////
 
 Goodie::Goodie(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
-    StudentWorld* swGoodie) : Actor(IID_BOULDER, startX, startY, down, 1.0,
-        1, swGoodie) {
+    StudentWorld* swGoodie) : Actor(imageID, startX, startY, dir, size,
+        depth, swGoodie) {
 
 }
 
-//checks if checkX, checkY is within a 3 square radius to x,y 
-bool Goodie::checkRadius3(int x, int y, int checkX, int checkY) {
-
-    double distance = sqrt((checkX - x) * (checkX - x) + (checkY - y) * (checkY - y));
-    if (distance <= 3)
-        return true;
-    return false;
-
-}
-
-
-
-//checks if checkX, checkY is within a 4 square radius to x,y
-bool Goodie::checkRadius4(int x, int y, int checkX, int checkY) {
-    double distance = sqrt((checkX - x) * (checkX - x) + (checkY - y) * (checkY - y));
-    if (distance <= 4)
-        return true;
-    return false;
-}
 void Goodie::annoy(int) {
     //none of the goodies can be annoyed
 }
+
+bool Goodie::canBlock() {
+    return false;
+}
+bool Goodie::isAnnoyable() {
+    return false;
+}
+
 Goodie::~Goodie() {
 
 }
@@ -563,12 +720,12 @@ Goodie::~Goodie() {
 Boulder::Boulder(int x, int y, StudentWorld* swBoulder) : Goodie(IID_BOULDER, x, y, down, 1.0,
     1, swBoulder) {
     _stable = true;
-
+    _playSound = true;
 }
 
 void Boulder::doSomething() {
     static int wait = 0;
-    static int once = 0;
+
     if (!getState())
         return;
 
@@ -582,22 +739,21 @@ void Boulder::doSomething() {
             }
             else {
                 _stable = false;
+                wait = 0;
             }
         }
     }
     else if (!_stable) {
-        if (once == 0) {
+        if (_playSound) {
             getWorld()->playSound(SOUND_FALLING_ROCK);
-            once++;
+            _playSound = false;
         }
         //check if iceMan is within a 3 sqaure radius
-        if (checkRadius3(getX(), getY(), getWorld()->getIceMan()->getX(), getWorld()->getIceMan()->getY())) {
+        if (checkRadius(getX(), getY(), getWorld()->getIceMan()->getX(), getWorld()->getIceMan()->getY(), 3)) {
             getWorld()->getIceMan()->annoy(100);
         }
-        //check if any protertor is within a 3 square radius 
-       // if(checkRadius3())
+        getWorld()->annoyPerson(getX(), getY(), 100, 3, true);
         fall();
-
     }
 }
 
@@ -633,6 +789,9 @@ bool Boulder::isIcePresentBelow(int x, int y) {
     return present;
 }
 
+bool Boulder::canBlock() {
+    return true;
+}
 
 Boulder::~Boulder() {
 
@@ -658,7 +817,7 @@ void OilBarrel::doSomething() {
     if (!isVisible()) {
 
         if (!isVisible()) {
-            if (checkRadius4(x, y, iceManX, iceManY)) {
+            if (checkRadius(x, y, iceManX, iceManY, 4)) {
                 setVisible(true);
                 return;
 
@@ -668,7 +827,7 @@ void OilBarrel::doSomething() {
         }
     }
     //if visible and within 3 square radius pick it up
-    else if (isVisible() && checkRadius3(x, y, iceManX, iceManY)) {
+    else if (isVisible() && checkRadius(x, y, iceManX, iceManY, 3)) {
         setState(false);
         getWorld()->playSound(SOUND_FOUND_OIL);
         getWorld()->increaseScore(1000);
@@ -691,8 +850,10 @@ Squirt::Squirt(int x, int y, Direction dir, StudentWorld* swWorld) : Goodie(IID_
 
 void Squirt::doSomething() {
 
-    //if withing 3 radius of a protestor cause 3 annoyance. setstate dead
-    if (_travelDis == 0)
+    //if withing 3 radius of a protestor cause 2 annoyance. setstate dead
+    if (getWorld()->annoyPerson(getX(), getY(), 2, 3, false))
+        setState(false);
+    else if (_travelDis == 0)
         setState(false);
     //if ice or boulder infront setStaet to dead
     else if (getWorld()->boulderPresent(getX(), getY()))
@@ -704,38 +865,181 @@ void Squirt::doSomething() {
         case up:
             if (getWorld()->isIcePresent(getX(), getY() + 1))
                 setState(false);
+            break;
         case down:
             if (getWorld()->isIcePresent(getX(), getY() - 1))
                 setState(false);
+            break;
         case right:
             if (getWorld()->isIcePresent(getX() + 1, getY()))
                 setState(false);
+            break;
         case left:
             if (getWorld()->isIcePresent(getX() - 1, getY()))
                 setState(false);
+            break;
         }
     }
 
+    //need to reduce travle distance
     //else move forward in dir
     if (getState()) {
         switch (getDirection()) {
         case up:
             moveTo(getX(), getY() + 1);
+            decTravelDis();
             return;
         case down:
             moveTo(getX(), getY() - 1);
+            decTravelDis();
             return;
+
         case right:
             moveTo(getX() + 1, getY());
+            decTravelDis();
             return;
+
         case left:
             moveTo(getX() - 1, getY());
+            decTravelDis();
             return;
         }
     }
 }
 
+void Squirt::decTravelDis() {
+    --_travelDis;
+}
 
 Squirt::~Squirt() {
+
+}
+
+/////Gold Nugget//////////////////////////////////////////////////////////////
+GoldNugget::GoldNugget(int x, int y, StudentWorld* swNugget, bool isPickableProtester) : Goodie(IID_GOLD, x, y,
+    right, 1.0, 2, swNugget) {
+    if (isPickableProtester) {
+        _pickableProtester = true;
+        _permanent = false;
+        setVisible(true);
+    }
+    else {
+        _pickableProtester = false;
+        _permanent = true;
+        setVisible(false);
+    }
+}
+
+bool GoldNugget::isPermanent() {
+    return _permanent;
+}
+
+
+bool GoldNugget::isPickableProtester() {
+    return _pickableProtester;
+}
+
+void GoldNugget::doSomething() {
+    static int countTicks = 0;
+    if (!getState())
+        return;
+    if (!isPickableProtester()) {
+        if (!isVisible() && checkRadius(getX(), getY(), getWorld()->getIceMan()->getX(), getWorld()->getIceMan()->getY(), 4)) {
+            setVisible(true);
+            return;
+        }
+        else if (checkRadius(getX(), getY(), getWorld()->getIceMan()->getX(), getWorld()->getIceMan()->getY(), 3)) {
+            setState(false);
+            getWorld()->playSound(SOUND_GOT_GOODIE);
+            getWorld()->increaseScore(10);
+            getWorld()->getIceMan()->incGoldNuggets();
+        }
+    }
+    else if (isPickableProtester()) {
+        if (!isPermanent()) {
+            countTicks++;
+        }
+        if (getWorld()->pickGold(getX(), getY(), 3)) {
+            setState(false);
+            getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);
+            getWorld()->increaseScore(25);
+        }
+        else if (countTicks >= 100) {
+            setState(false);
+            countTicks = 0;
+        }
+    }
+}
+
+GoldNugget::~GoldNugget() {
+
+}
+///Sonar/////////////////////////////////////////////////////////////////
+Sonar::Sonar(int x, int y, StudentWorld* swSonar) : Goodie(IID_SONAR, x, y, right, 1.0, 2, swSonar) {
+    int num = 300 - (10 * getWorld()->getLevel());
+    _ticksLeft = std::max(100, num);
+}
+
+int Sonar::getTicks() {
+    return _ticksLeft;
+}
+
+void Sonar::decTicks() {
+    _ticksLeft--;
+}
+void Sonar::doSomething() {
+    if (!getState())
+        return;
+    if (checkRadius(getX(), getY(), getWorld()->getIceMan()->getX(), getWorld()->getIceMan()->getY(), 3)) {
+        setState(false);
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->getIceMan()->incSonar();
+        getWorld()->increaseScore(75);
+    }
+    else if (getTicks() <= 0) {
+        setState(false);
+    }
+    else
+        decTicks();
+}
+
+Sonar::~Sonar() {
+
+}
+
+///Water Pool///////////////////////////////////////////////////////////
+WaterPool::WaterPool(int x, int y, StudentWorld* swSonar) : Goodie(IID_WATER_POOL, x, y, right, 1.0, 2, swSonar) {
+    int num = 300 - (10 * getWorld()->getLevel());
+    _ticksLeft = std::max(100, num);
+}
+
+int WaterPool::getTicks() {
+    return _ticksLeft;
+}
+
+void WaterPool::decTicks() {
+    _ticksLeft--;
+}
+
+
+
+void WaterPool::doSomething() {
+    if (!getState())
+        return;
+    if (checkRadius(getX(), getY(), getWorld()->getIceMan()->getX(), getWorld()->getIceMan()->getY(), 3)) {
+        setState(false);
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->getIceMan()->incWater(5);
+        getWorld()->increaseScore(100);
+    }
+    else if (getTicks() <= 0) {
+        setState(false);
+    }
+    else
+        decTicks();
+}
+
+
+WaterPool::~WaterPool() {
 
 }

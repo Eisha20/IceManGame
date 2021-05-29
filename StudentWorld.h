@@ -18,28 +18,33 @@ public:
 
     virtual int init(); //gets called 1) game starts 2) during the start of a new level 3) loss of life
                         //when it gets called all previous objects should be deleted 
-
     virtual int move();
-
     virtual void cleanUp();
-
-    void makeIceMan();
-
-    void makeIceCubes();
-    void makeProtesters();
-    void makeGoodies();
-
-    void makeStatString();
     bool isIcePresent(int x, int y);
     void destroyIce(int x, int y);
-    void makeBoulders();
+    bool isIceAt(const int actorX, const int actorY, const int endX, const int endY);
+    bool isBlockableActorNearby(Actor*, int radius);
     IceMan* getIceMan();
-    bool timeToCreateNewProtester();
+    bool timeToCreateNewProtester(); // can probably move to private
     bool boulderPresent(int x, int y);
-    void annoyProtestors(int x, int y);
+    bool annoyPerson(int x, int y, int annoyValue, int radius, bool annoyAll);
+    bool pickGold(int x, int y, int radius);
+    void makeDroppedGoldNugget();
+    void makeSquirt(int, int);
     virtual ~StudentWorld();
 
 private:
+    bool checkRadiusForConstruction(int, int);
+    void makeGold(int);
+    void makeSonar();
+    void makeWaterPool();
+    void makeIceMan();
+    void makeOilBarrels(int num);
+    void makeBoulders(int);
+    void makeIceCubes();
+    void makeProtesters();
+    void makeGoodies();
+    void makeStatString();
     IceMan* iceMan;
 
     //(x, y) coordinate: column, row
