@@ -1,9 +1,11 @@
 #include "Actor.h"
 #include "StudentWorld.h"
 #include <math.h>
+#include <thread>
+#include <future>
 
-// Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
 
+using namespace std;
 // Actor Class ////////////////////////////////////////////////////////////////////////////////////////
 
 Actor::Actor(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
@@ -16,6 +18,8 @@ Actor::Actor(int imageID, int startX, int startY, Direction dir, double size, un
 
 //checks if checkX, checkY is within a specified radius to x,y 
 bool Actor::checkRadius(int x, int y, int checkX, int checkY, int radius) {
+    if (checkX < 0 || checkX > VIEW_WIDTH || checkY < 0 || checkY > VIEW_WIDTH)
+        return false;
     double distance = sqrt((checkX - x) * (checkX - x) + (checkY - y) * (checkY - y));
     if (distance <= radius)
         return true;
@@ -57,9 +61,14 @@ bool Person::canBlock() {
     return false;
 }
 
-void Person::setHitPoints(int hitPoints) {
-    _hitPoints = hitPoints;
+void Person::decHitPoints(int hitPoints) {
+    _hitPoints -= hitPoints;
 }
+
+void Person::bribe() {
+    return;
+}
+
 Person::~Person() {
 
 }
@@ -81,6 +90,15 @@ void IceMan::doSomething() {
     int y = this->getY();
     StudentWorld* world = this->getWorld();
 
+    //Remove ice if ice man's location overlaps with ice objects
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (world->isIcePresent(x + i, y + j)) {
+                world->destroyIce(x + i, y + j);
+                world->playSound(SOUND_DIG);
+            }
+        }
+    }
 
     int key;
     if (getWorld()->getKey(key) == true) { // Accessing GameWorld's getKey fn to see if a key was hit by user.
@@ -88,53 +106,72 @@ void IceMan::doSomething() {
         case KEY_PRESS_LEFT:
             if (getDirection() != left)
                 setDirection(left);
-            else if (getX() > 0)
+            else if (getX() > 0 && !(getWorld()->isBlockableActorWithin(x - 1, y, 3)))
                 moveTo(getX() - 1, getY());
+            else if (!(getX() > 0))
+                moveTo(getX(), getY());
             break;
 
         case KEY_PRESS_RIGHT:
             if (getDirection() != right)
                 setDirection(right);
-            else if (getX() < VIEW_WIDTH - 4)
+            else if (getX() < (VIEW_WIDTH - 4) && !(getWorld()->isBlockableActorWithin(x + 1, y, 3)))
                 moveTo(getX() + 1, getY());
+            else if (!(getX() < 0))
+                moveTo(getX(), getY());
             break;
 
         case KEY_PRESS_UP:
             if (getDirection() != up)
                 setDirection(up);
-            else if (getY() < VIEW_HEIGHT - 4)
+            else if (getY() < (VIEW_HEIGHT - 4) && !(getWorld()->isBlockableActorWithin(x, y + 1, 3)))
                 moveTo(getX(), getY() + 1);
+            else if (!(getY() < (VIEW_HEIGHT - 4)))
+                moveTo(getX(), getY());
             break;
 
         case KEY_PRESS_DOWN:
             if (getDirection() != down)
                 setDirection(down);
-            else if (getY() > 0)
+            else if (getY() > 0 && !(getWorld()->isBlockableActorWithin(x, y - 1, 3)))
                 moveTo(getX(), getY() - 1);
+            else if (!(getY() > 0))
+                moveTo(getX(), getY());
             break;
+
 
         case KEY_PRESS_SPACE:
             // add a squirt in front of player.
+            //add checks for end of map just because
             if (getWater() > 0) {
                 getWorld()->playSound(SOUND_PLAYER_SQUIRT);
+                getWorld()->getIceMan()->decWater();
                 switch (getWorld()->getIceMan()->getDirection()) {
                 case up:
-                    getWorld()->makeSquirt(x, y + 4);
+                    if (!getWorld()->isIcePresent(x, y + 4) && !(getWorld()->isBlockableActorWithin(x, y + 4, 3))) {
+                        getWorld()->makeSquirt(x, y + 4);
+                    }
                     break;
                 case down:
-                    getWorld()->makeSquirt(x, y - 4);
+                    if (!getWorld()->isIcePresent(x, y - 4) && !(getWorld()->isBlockableActorWithin(x, y - 4, 3))) {
+                        getWorld()->makeSquirt(x, y - 4);
+                    }
                     break;
                 case left:
-                    getWorld()->makeSquirt(x - 4, y);
+                    if (!getWorld()->isIcePresent(x - 4, y) && !(getWorld()->isBlockableActorWithin(x - 4, y, 3))) {
+                        getWorld()->makeSquirt(x - 4, y);
+                    }
                     break;
                 case right:
-                    getWorld()->makeSquirt(x + 4, y);
+                    if (!getWorld()->isIcePresent(x + 4, y) && !(getWorld()->isBlockableActorWithin(x + 4, y, 3))) {
+                        getWorld()->makeSquirt(x + 4, y);
+                    }
                     break;
                 }
                 break;
+            }
 
         case KEY_PRESS_TAB:
-            // add here
             if (getGoldNuggets() > 0) {
                 getWorld()->makeDroppedGoldNugget();
                 getWorld()->getIceMan()->decGoldNuggets();
@@ -142,20 +179,22 @@ void IceMan::doSomething() {
             break;
 
         case KEY_PRESS_ESCAPE:
-            // add here
+            annoy(100);
             break;
+        case 'z':
+            if (getSonar() > 0) {
+                decSonar();
+                getWorld()->makeGoodiesVisible(x, y, 12);
             }
+            break;
+        case 'Z':
+            if (getSonar() > 0) {
+                decSonar();
+                getWorld()->makeGoodiesVisible(x, y, 12);
+            }
+            break;
         }
 
-        //Remove ice if ice man's location overlaps with ice objects
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                if (world->isIcePresent(x + i, y + j)) {
-                    world->destroyIce(x + i, y + j);
-                    world->playSound(SOUND_DIG);
-                }
-            }
-        }
 
     }
 }
@@ -164,11 +203,12 @@ void IceMan::doSomething() {
 void IceMan::annoy(int annoyValue) {
     if (getHitPoints() != 0) {
         int hitPoints = getHitPoints();
-        hitPoints -= annoyValue;
-        setHitPoints(hitPoints);
+        decHitPoints(annoyValue);
     }
-    if (getHitPoints() <= 0)
+    if (getHitPoints() <= 0) {
         setState(false);
+        getWorld()->playSound(SOUND_PLAYER_GIVE_UP);
+    }
 }
 
 //acessor and mutator for barrels
@@ -238,6 +278,9 @@ bool Ice::isAnnoyable() {
     return false;
 }
 
+void Ice::bribe() {
+    return;
+}
 
 Ice::~Ice() {
     this->setVisible(false);
@@ -257,6 +300,13 @@ Protester::Protester(int image, int hitPoints, StudentWorld* swProtester, bool s
     _ticksBetweenPerpendicularTurns = 200;
 }
 
+int Protester::getIceManX() {
+    return getWorld()->getIceMan()->getX();
+}
+
+int Protester::getIceManY() {
+    return getWorld()->getIceMan()->getY();
+}
 
 // Accessor and Mutator for isLeavingField
 bool Protester::getIsLeavingField() {
@@ -267,41 +317,14 @@ void Protester::setIsLeavingField(bool isLeavingField) {
     _isLeavingField = isLeavingField;
 }
 
-bool Protester::isWithinShoutingDistance() {
-
-    // int iceManDirection = getWorld()->getIceMan()->getDirection();
-
-    int iceManX = getWorld()->getIceMan()->getX();
-    int iceManY = getWorld()->getIceMan()->getY();
-
-    if (checkRadius(getX(), getY(), iceManX, iceManY, 4)) {
-        switch (getDirection()) {
-        case left:
-            if (iceManX < getX()) // If Protester is facing left toward IceMan. 
-                return true;
-            break;
-        case right:
-            if (iceManX >= getX())
-                return true;
-            break;
-        case up:
-            if (iceManY >= getY())
-                return true;
-            break;
-        case down:
-            if (iceManY <= getY())
-                return true;
-            break;
-        }
-    }
-    return false;
-}
+// int iceManDirection = getWorld()->getIceMan()->getDirection();
 
 bool Protester::isAbleToMove() {
     if (_ticksToWaitBetweenMoves <= 0) {
-        _ticksToWaitBetweenMoves = std::max(0, 3 - _level / 4);
+        int waitPeriod = 3 - getWorld()->getLevel() / 4;
+        _ticksToWaitBetweenMoves = std::max(0, waitPeriod);
         _ticksToWaitBetweenYells--;
-        _ticksBetweenPerpendicularTurns--;
+        _ticksBetweenPerpendicularTurns--; // double check
         return true;
     }
     else {
@@ -321,45 +344,65 @@ bool Protester::isAbleToYell() {
 }
 
 bool Protester::isIceManInClearSight() {
-    int iceManX = getWorld()->getIceMan()->getX(); // create a private variable for these
-    int iceManY = getWorld()->getIceMan()->getY();
-
-    //if (checkRadius(getX(), getY(), iceManX, iceManY, 4)) { // if within a radius of 4. Spec says so but im unsure
-      //  return false;
-    //}
-    //if (!canMoveTowardIceMan())
-       // return false;
 
     int i = 0;
-    if (getX() == iceManX) { // If in same column...
-        if (getY() > iceManY) { //...and protester is above iceman...
-            while (!(getWorld()->isIcePresent(getX(), getY() - i))) { // ...check if ice blocks path btwn them.
-                ++i;
-                if (getY() - i == iceManY) { //  If path is clear.
+    if (getX() == getIceManX()) { // If in same column... 
+        if (getY() == getIceManY() && getDirection() == down) { // => ice can't be blocking in this proximity.
+            moveTo(getX(), getY() - 1);
+            setDirection(up);
+            return true;
+        }
+        else if (getY() == getIceManY() && getDirection() == up) { // => ice can't be blocking in this proximity.
+            moveTo(getX(), getY() + 1);
+            setDirection(down);
+            return true;
+        }
+        else if (getY() > getIceManY() + 4) { //...and protester is above iceman by at least 5 spaces => can move at least one space down...
+            while (!(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - i))
+                && !(getWorld()->isBlockableActorWithin(getX(), getY() - i, 3))) {
+
+                if ((getY() - i) == getIceManY()) { //  If path is clear.
                     setDirection(down);
                     moveTo(getX(), getY() - 1);
                     return true;
                 }
+                ++i;
             }
             return false;
         }
-        else if (getY() < iceManY) { // If protester is below iceman....
-            while (!(getWorld()->isIcePresent(getX(), getY() + i))) { // ... check if ice blocks path btwn them.
-                ++i;
-                if (getY() + i == iceManY) { //  If path is clear.
+        else if (getY() + 4 < getIceManY()) { // If protester is below iceman by at least 5 spaces => can move at least one space up...
+            while (!(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + i))
+                && !(getWorld()->isBlockableActorWithin(getX(), getY() + i, 3))) {
+
+                if (getY() + i == getIceManY()) { //  If path is clear.
                     setDirection(up);
                     moveTo(getX(), getY() + 1);
                     return true;
                 }
+                ++i;
             }
             return false;
         }
     }
-    if (getY() == iceManY) { // If in same row...
-        if (getX() > iceManX) { //...and protester is right of iceman...
-            while (!(getWorld()->isIcePresent(getX() - i, getY()))) { // ...check if ice blocks path btwn them. // -3 works but crashes
+
+    i = 0;
+    if (getY() == getIceManY()) { // If in same row...
+        if (getX() == getIceManX() && getDirection() == left) { // => ice can't be blocking in this proximity.
+            moveTo(getX() - 1, getY());
+            setDirection(right);
+            return true;
+        }
+        else if (getX() == getIceManX() && getDirection() == right) { // => ice can't be blocking in this proximity.
+            moveTo(getX() + 1, getY());
+            setDirection(left);
+            return true;
+
+        }
+        else if (getX() > getIceManX() + 4) { //...and protester is right of iceman by at least 5 spaces => can move at least one space left...
+            while (!(getWorld()->isIceAt(getX(), getY(), getX() - i, getY() + 3))
+                && !(getWorld()->isBlockableActorWithin(getX() - i, getY(), 3))) { // NEW
                 ++i;
-                if (getX() - i == iceManX) { //  If path is clear. // -3 works but crashes
+                if (getX() - i == getIceManX()) { //  If path is clear up until x coord iceman
                     setDirection(left);
                     moveTo(getX() - 1, getY());
                     return true;
@@ -367,10 +410,11 @@ bool Protester::isIceManInClearSight() {
             }
             return false;
         }
-        else if (getX() < iceManX) { // If protester is left of iceman...
-            while (!(getWorld()->isIcePresent(getX() + i, getY()))) { // ...check if ice blocks path btwn them.
+        else if (getX() + 4 < getIceManX()) { // If protester is left of iceman by more than 4 spaces => can move at least one space right...
+            while (!(getWorld()->isIceAt(getX(), getY(), getX() + i, getY() + 3))
+                && !(getWorld()->isBlockableActorWithin(getX() + i, getY(), 3))) { // NEW
                 ++i;
-                if (getX() + i == iceManX) { //  If path is clear.
+                if (getX() + i == getIceManX()) { //  If path is clear.
                     setDirection(right);
                     moveTo(getX() + 1, getY());
                     return true;
@@ -381,30 +425,87 @@ bool Protester::isIceManInClearSight() {
     }
     return false;
 
+
 }
 
-bool Protester::canMoveTowardIceMan() {
 
-    int iceManX = getWorld()->getIceMan()->getX();
-    int iceManY = getWorld()->getIceMan()->getY();
-    /*
-    If a protester is to the right of iceman by 4 or less spaces(aka iceManX + 4 >= protesterX) and protesterY == iceManY(aka on same level)
-        return false
-        */
-    return false; // testing
+bool Protester::isIceManBlocking() {
+
+    if (getX() == getIceManX()) { // If in same column... 
+
+        if (getY() == getIceManY() && getDirection() == down) { // => ice can't be blocking in this proximity.
+            //moveTo(getX(), getY() - 1);
+            //setDirection(up);
+            return true;
+        }
+        else if (getY() == getIceManY() && getDirection() == up) { // => ice can't be blocking in this proximity.
+            //moveTo(getX(), getY() + 1);
+            //setDirection(down);
+            return true;
+        }
+        else if (getY() > getIceManY() + 4) { //...and protester is above iceman by at least 5 spaces => can move at least one space down...
+            if ((getY() - 1) == getIceManY()) { //  If path is clear.
+                //setDirection(down);
+                //moveTo(getX(), getY() - 1);
+                return true;
+            }
+
+            return false;
+        }
+        else if (getY() + 4 < getIceManY()) { // If protester is below iceman by at least 5 spaces => can move at least one space up...
 
 
-    if (iceManX + 4 >= getX())// && iceManY == getY())
+            if (getY() + 1 == getIceManY()) { //  If path is clear.
+                //setDirection(up);
+                //moveTo(getX(), getY() + 1);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+
+    if (getY() == getIceManY()) { // If in same row...
+
+        if (getX() == getIceManX() && getDirection() == left) { // => ice can't be blocking in this proximity.
+            //moveTo(getX() - 1, getY());
+            //setDirection(right);
+            return true;
+        }
+        else if (getX() == getIceManX() && getDirection() == right) { // => ice can't be blocking in this proximity.
+            //moveTo(getX() + 1, getY());
+            //setDirection(left);
+            return true;
+
+        }
+
+        else if (getX() > getIceManX() + 4) { //...and protester is right of iceman by at least 5 spaces => can move at least one space left...
+            if (getX() - 1 == getIceManX()) { //  If path is clear up until x coord iceman
+                //setDirection(left);
+                //moveTo(getX() - 1, getY());
+                return true;
+            }
+        }
         return false;
-    return true;
-}
+    }
+    else if (getX() + 4 < getIceManX()) { // If protester is left of iceman by more than 4 spaces => can move at least one space right...
+        if (getX() + 1 == getIceManX()) { //  If path is clear.
+            //setDirection(right);
+            //moveTo(getX() + 1, getY());
+            return true;
+        }
 
+        return false;
+    }
+    return false;
+}
 
 bool Protester::canPerpendicularlyMove() {
 
     if (_ticksBetweenPerpendicularTurns > 0)
         return false;
-
+    srand(time(0));
     int randomNumber = (rand() % 2) + 1; // random num btwn 1 and 2.
     bool noIceLeftward = !(getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3));
     bool noIceRightward = !(getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3));
@@ -412,7 +513,7 @@ bool Protester::canPerpendicularlyMove() {
     bool noIceBelow = !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1));
 
     if (getDirection() == left || getDirection() == right) {
-        if (noIceAbove && noIceBelow && getY() < VIEW_HEIGHT - 4 && getY() > 0) { // If able to move left and right randomly select a direction
+        if (getY() < VIEW_HEIGHT - 4 && getY() > 0 && noIceAbove && noIceBelow) { // If able to move left and right randomly select a direction
             // check boulders
             if (randomNumber == 1) { // move up
                 setDirection(up);
@@ -423,11 +524,11 @@ bool Protester::canPerpendicularlyMove() {
                 moveOneSquare();
             }
         }
-        else if (noIceAbove && getY() < VIEW_HEIGHT - 4) { // move up
+        else if (getY() < VIEW_HEIGHT - 4 && noIceAbove) { // move up
             setDirection(up);
             moveOneSquare();
         }
-        else if (noIceBelow && getY() > 0) { // move down
+        else if (getY() > 0 && noIceBelow) { // move down
             setDirection(down);
             moveOneSquare();
         }
@@ -438,7 +539,7 @@ bool Protester::canPerpendicularlyMove() {
     }
 
     else if (getDirection() == up || getDirection() == down) {
-        if (noIceLeftward && noIceRightward && getX() > 0 && getX() < VIEW_WIDTH - 4) {
+        if (getX() > 0 && getX() < VIEW_WIDTH - 4 && noIceLeftward && noIceRightward) {
             // check boulders
             if (randomNumber == 1) { // move left
                 setDirection(left);
@@ -449,11 +550,11 @@ bool Protester::canPerpendicularlyMove() {
                 moveOneSquare();
             }
         }
-        else if (noIceLeftward && getX() > 0) { // move left
+        else if (getX() > 0 && noIceLeftward) { // move left
             setDirection(left);
             moveOneSquare();
         }
-        else if (noIceRightward && getX() < VIEW_WIDTH - 4) { // move right
+        else if (getX() < VIEW_WIDTH - 4 && noIceRightward) { // move right
             setDirection(right);
             moveOneSquare();
         }
@@ -462,78 +563,95 @@ bool Protester::canPerpendicularlyMove() {
         }
         return true;
     }
-
     return true;
 }
 
 bool Protester::isBlocked() {
 
+    // if blocked by edge of map, ice, or boulder.
     switch (getDirection()) {
     case left:
-        if (getX() <= 0) // blocked by edge of map
+        if (getX() <= 0 || getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3)
+            /*|| getWorld()->isBlockableActorWithin(getX() - 1, getY(), 3)*/ //) { // i think wrong
+            || getWorld()->boulderPresent(getX() - 1, getY())) {
             return true;
-        if (getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3)) // if ice is to left
-            return true;
-        //if (getWorld()->boulderPresent(getX() - 1, getY()))
-           // return true;
-        // Need some sort of check for goodies.
+        }
         break;
     case right:
-        if (!(getX() < VIEW_WIDTH - 4)) // blocked by edge of map 
+        if (getX() >= (VIEW_WIDTH - 4) || getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3)
+            /* || getWorld()->isBlockableActorWithin(getX() + 4, getY(), 3)*/ // ) {
+            || getWorld()->boulderPresent(getX() + 4, getY())) {
             return true;
-        if (getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3)) // if ice is to right
-            return true;
-        // Need some sort of check for goodies.
+        }
         break;
     case up:
-        if (!(getY() < VIEW_HEIGHT - 4)) // blocked by edge of map
+        if (getY() >= (VIEW_HEIGHT - 4) || getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4)
+            /*|| getWorld()->isBlockableActorWithin(getX(), getY() + 4, 3)*/ // ) {
+            || getWorld()->boulderPresent(getX(), getY() + 4)) {
             return true;
-        if (getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4)) // if ice is above
-            return true;
+        }
         break;
-        // Need some sort of check for goodies.
     case down:
-        if (!(getY() > 0)) // blocked by edge of map
+        if (getY() <= 0 || getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1)
+            /*|| getWorld()->isBlockableActorWithin(getX(), getY() - 1, 3)*/ // ) {
+            || getWorld()->boulderPresent(getX(), getY() - 1)) {
             return true;
-        if (getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1)) // if ice is below
-            return true;
+        }
         break;
-        // Need some sort of check for goodies.
     }
     return false;
 }
 
+bool Protester::isPathBlocked() {
+    return false;
+}
+
+
 void Protester::moveOneSquare() {
+
+    /*
     if (_numSquaresToMoveInCurrentDirection <= 0) {
+        srand(time(0));
         _numSquaresToMoveInCurrentDirection = rand() % (53) + 8; // Reset to new random number.
         randomDirection(); // set direction to a NEW random direction.
-    }
+    } */
+
+    /*I was trying to stop the protesters from walking over ice but ended up making them go around in circles
+    kinda so I just commented that part out because I don't understand why it's not working*/
 
     switch (getDirection()) { // Move one square.
     case left:
-        if (getX() > 0 && !(getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3))) {
+        if (getX() > 0 && !(getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3))
+            && !getWorld()->boulderPresent(getX() - 1, getY())
+            /* &&  !(getWorld()->isIceManAt(getX(), getY(), getX() - 1, getY() + 3))  */// testing
+            /* && !(getWorld()->isBlockableActorWithin(getX() - 1, getY(), 3))*/)
             moveTo(getX() - 1, getY());
-
-        }
         break;
     case right:
-        if (getX() < VIEW_WIDTH - 4 && !(getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3)))
+        if (getX() < VIEW_WIDTH - 4 && !(getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3))
+            && !getWorld()->boulderPresent(getX() + 4, getY())
+            /*&& !(getWorld()->isIceManAt(getX(), getY(), getX() + 4, getY() + 3)) */
+            /*&& !(getWorld()->isBlockableActorWithin(getX() + 1, getY(), 3))*/)
             moveTo(getX() + 1, getY());
         break;
     case up:
-        if (getY() < VIEW_HEIGHT - 4 && !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4)))
+        if (getY() < VIEW_HEIGHT - 4 && !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4))
+            && !getWorld()->boulderPresent(getX(), getY() + 4)
+            /*&& !(getWorld()->isBlockableActorWithin(getX(), getY() + 1, 3))*/)
             moveTo(getX(), getY() + 1);
         break;
     case down:
-        if (getY() > 0 && !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1)))
+        if (getY() > 0 && !(getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1))
+            && !getWorld()->boulderPresent(getX(), getY() - 1)
+            /*&& !(getWorld()->isBlockableActorWithin(getX(), getY() - 1, 3))*/)
             moveTo(getX(), getY() - 1);
         break;
     }
-    //_numSquaresToMoveInCurrentDirection--;
     return;
 }
 
 void Protester::randomDirection() { // set direction to a NEW random direction.
+    // srand(time(0));
     int directionNum = (rand() % 3) + 1; // random num btwn 1 and 3.
 
     if (getDirection() == up) {
@@ -584,7 +702,7 @@ void Protester::randomDirection() { // set direction to a NEW random direction.
             break;
         }
     }
-    else if (getDirection() == right) { // right
+    else if (getDirection() == right) {
         switch (directionNum) {
         case 1:
             if (getY() > 0)
@@ -606,115 +724,308 @@ void Protester::randomDirection() { // set direction to a NEW random direction.
 void Protester::doSomething() { // P. 40 
 
     /*
-     Currently need to:
-     fix movement of protester when in close proximity to iceman
-     breadth first search algorithm
-     handle when protesters are close to boulders
+    Concerns:
+    - 4. what does direction mean?
+    -
+
     */
 
-    //if (getWorld()->isBlockableActorNearby(this, 3)) {
-         //setVisible(false);
-    //}
+    srand(time(0));
 
-    //if (getX() == getWorld()->getIceMan()->getX()) // FOR TESTING
-        //setHitPoints(0);
+    if (!getIsLeavingField()) {
+        if (!this->getState()) // If dead, return immediately. // 1.
+            return;
 
-    if (!this->getState()) // If dead, return immediately. // 1.
-        return;
+        else if (!isAbleToMove()) { // If in rest state, return immediately and decrement ticks left to wait. // 2
+            return;
+        }
 
-    else if (!isAbleToMove()) { // If in rest state, return immediately and decrement ticks left to wait. // 2
-        return;
-    }
-
-    else if (getHitPoints() <= 0) { // If dead, have protester leave the field. // 3
-        if (getX() == 60 && getY() == 60) { // If already at exit point... // A
+        else if (getHitPoints() <= 0 && getX() == 60 && getY() == 60) { // If dead and at exit point. // 3
             this->getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
             setState(false); // Indicator for deletion.
             setVisible(false);
             return;
         }
-        //setVisible(false); // FOR TESTING
 
-        // Else, if not at exit point. annoy // B
-            // => determine which direction to move based on a queue based maze searching algortihm
-            // => move one step toward exit
-            // => return
-    }
+        else if (checkRadius(getX(), getY(), getIceManX(), getIceManY(), 4) && isAbleToYell()) {
+            // If able (w/ in radius), shout at iceMan. // 4   
+            // ensure proper direction before yelling => still trying to think of best way
 
-    //This works
-    else if (isWithinShoutingDistance() && isAbleToYell()) { // If able, shout at iceMan. // 4
-        this->getWorld()->playSound(SOUND_PROTESTER_YELL); // A
-        // annoy iceman and deduct 2 points from the iceman's hit points, possibly killing the iceman.
-        getWorld()->getIceMan()->annoy(2);
-        return;
-    }
+            /*
+            if (getY() > getIceManY())
+                setDirection(down);
+            else if (getY() < getIceManY())
+                setDirection(up);
+            else if (getX() < getIceManX())
+                setDirection(right);
+            else if (getX() > getIceManX())
+                setDirection(left);
+              */
 
-    else if (isIceManInClearSight()) { // 5ABCAB // && canMoveTowardIceMan(
-        // If in clear sight, fn switches direction toward iceman and moves one square his way. 
-        _numSquaresToMoveInCurrentDirection = 0;
-        return;
-    }
-
-
-    else if (isBlocked()) { // if protester is about to run into an obstacle (ice, goodie,...edge of map?) // 6
-        //--_numSquaresToMoveInCurrentDirection;
-        while (isBlocked()) {
-            randomDirection();
+            this->getWorld()->playSound(SOUND_PROTESTER_YELL); // A
+            // annoy iceman and deduct 2 points from the iceman's hit points, possibly killing the iceman.
+            getWorld()->getIceMan()->annoy(2);
+            return;
         }
-        _numSquaresToMoveInCurrentDirection = rand() % (53) + 8;
-        moveOneSquare(); // move one square in this direction 
-        return;
+
+        else if (isIceManInClearSight() // If in clear sight, fn switches direction toward iceman and moves one square his way.
+            && !checkRadius(getX(), getY(), getIceManX(), getIceManY(), 4)) { // 5
+            _numSquaresToMoveInCurrentDirection = 0;
+            return;
+        }
+
+        else if (--_numSquaresToMoveInCurrentDirection <= 0) { // 6 
+            do {
+                randomDirection();
+            }             while (isBlocked()); // by ice or boulder or boundary
+
+            _numSquaresToMoveInCurrentDirection = rand() % (53) + 8;
+
+            if (!checkRadius(getX(), getY(), getIceManX(), getIceManY(), 3)) {
+                moveOneSquare();
+                --_numSquaresToMoveInCurrentDirection;
+            }
+            return;
+        }
+
+        else if (canPerpendicularlyMove()) { // 7 
+            _ticksBetweenPerpendicularTurns = 200;
+            _numSquaresToMoveInCurrentDirection = rand() % (53) + 8;
+            return;
+        }
+
+        else { // 8
+            --_numSquaresToMoveInCurrentDirection;
+            if (!checkRadius(getX(), getY(), getIceManX(), getIceManY(), 3) && !isBlocked()) {
+                moveOneSquare();
+            }
+        }
     }
 
-    else if (canPerpendicularlyMove()) { // 7 // perpendiular stuff
-        _numSquaresToMoveInCurrentDirection = rand() % (53) + 8;
-        return;
-    }
+    else {
+        // should only be calling it once. I think.
+        // have to use threads
+        // have to take care of ticks and also the direction
+        if (!isAbleToMove())  // If in rest state, return immediately and decrement ticks left to wait. // 2
+            return;
+        goBack();
 
-    else { // 8
-        moveOneSquare();
+
+        //auto fut = async(&Protester::leaveOilField, this);
+
+        //fut.get(); // or wait
     }
     return;
 
 }
 
-Protester::~Protester() {
+void Protester::leaveOilField() {
 
+    shared_ptr<Coordinate> test = nullptr;
+    queue<shared_ptr<Coordinate>> check;
+    Coordinate xy({ 60, 60 }, 0);
+    check.push(make_shared<Coordinate>(xy)); // push exit point
+    store.push(check.front());
+    cerr << "Protester coordinates: " << getX() << " " << getY() << endl;
+
+    while (!check.empty()) { //
+
+
+        test = check.front(); // next coord to check
+        check.pop();
+        cerr << test->getFirst() << " " << test->getSecond() << " " << test->getSteps() << endl;
+
+        if (test->getFirst() == getX() && test->getSecond() == getY()) { // if current guess = loc of protester => protester foun
+            _vertex = test;
+            goBack();
+            return;
+        }
+
+        // check if ice/boulder is up, down, left, right.
+        else {
+
+            //can move up
+            int x = test->getFirst();
+            int y = test->getSecond();
+            if (y < 60 && !getWorld()->isIceAt(x, y, x + 3, y + 4) && !(getWorld()->isBlockableActorWithin(x, y + 1, 3))) {
+                if (!ifVisited(x, y + 1, store)) {
+                    Coordinate p({ x, y + 1 }, test->getSteps() + 1);
+                    check.push(make_shared<Coordinate>(p));
+                    store.push(check.front());
+                }
+            }
+            //checking if can move right
+            if (x < 60 && !getWorld()->isIceAt(x, y, x + 4, y + 3) && !(getWorld()->isBlockableActorWithin(x + 1, y, 3))
+                && !ifVisited(x + 1, y, store)) {
+
+                Coordinate p({ x + 1, y }, test->getSteps() + 1);
+                check.push(make_shared<Coordinate>(p));
+                store.push(check.front());
+
+            }
+            //can move left
+            if (x > 0 && !getWorld()->isIceAt(x, y, x - 1, y + 3) && !(getWorld()->isBlockableActorWithin(x - 1, y, 3))
+                && !ifVisited(x - 1, y, store)) {
+                Coordinate p({ x - 1 ,y }, test->getSteps() + 1);
+                check.push(make_shared<Coordinate>(p));
+                store.push(check.front());
+
+            }
+            //can move down
+            if (y > 0 && !getWorld()->isIceAt(x, y, x + 3, y - 1) && !(getWorld()->isBlockableActorWithin(x, y - 1, 3))
+                && !ifVisited(x, y - 1, store)) {
+
+                Coordinate p({ x, y - 1 }, test->getSteps() + 1);
+                check.push(make_shared<Coordinate>(p));
+                store.push(check.front());
+            }
+        }
+    }
 }
+
+bool Protester::ifVisited(int x, int y, stack<shared_ptr<Coordinate>> index) {
+
+    while (!index.empty()) {
+        if (index.top()->getFirst() == x && index.top()->getSecond() == y) {
+            return true;
+        }
+
+        index.pop();
+    }
+    return false;
+}
+
+void Protester::goBack() {
+    /* cerr << "In goBack() " << endl;
+     cerr << " protester coordinate: " << _vertex->getFirst() << " " << _vertex->getSecond() << endl;
+     cerr << " queue coordinate: " << store.top()->getFirst() << " " << store.top()->getSecond() << endl;*/
+
+    while (!store.empty()) {
+
+        if (store.top()->getSteps() == (_vertex->getSteps() - 1)) {
+
+            //up
+            if (store.top()->getFirst() == _vertex->getFirst() && store.top()->getSecond() == _vertex->getSecond() + 1) {
+                setDirection(up);
+                moveTo(store.top()->getFirst(), store.top()->getSecond());
+
+                _vertex = store.top();
+                store.pop();
+                return;
+            }
+            //down
+            else if (store.top()->getFirst() == _vertex->getFirst() && store.top()->getSecond() == _vertex->getSecond() - 1) {
+                setDirection(down);
+                moveTo(store.top()->getFirst(), store.top()->getSecond());
+
+                _vertex = store.top();
+                store.pop();
+                return;
+            }
+            //right
+            else if (store.top()->getFirst() == _vertex->getFirst() + 1 && store.top()->getSecond() == _vertex->getSecond()) {
+                setDirection(right);
+                moveTo(store.top()->getFirst(), store.top()->getSecond());
+
+                _vertex = store.top();
+                store.pop();
+                return;
+            }
+            //left
+            else if (store.top()->getFirst() == _vertex->getFirst() - 1 && store.top()->getSecond() == _vertex->getSecond()) {
+                setDirection(left);
+                moveTo(store.top()->getFirst(), store.top()->getSecond());
+
+                _vertex = store.top();
+                store.pop();
+                return;
+            }
+        }
+
+        store.pop();
+    }
+    setState(false);
+}
+
+
+void Protester::bribe() { return; }
+
+void Protester::setTicksToWaitBetweenMoves(int ticksToWaitBetweenMoves) {
+    _ticksToWaitBetweenMoves = ticksToWaitBetweenMoves;
+}
+
+Protester::~Protester() {}
+
+
 // Regular Protester Class ////////////////////////////////////////////////////////////////////////////
 
 RegularProtester::RegularProtester(StudentWorld* swRegProtester)
     : Protester(IID_PROTESTER, 5, swRegProtester, true) {
 }
 
-void RegularProtester::annoy(int) {
+void RegularProtester::annoy(int value) {
+    if (getIsLeavingField())
+        return;
+    if (getHitPoints() > 0) {
+        decHitPoints(value);
+        if (getHitPoints() > 0) {
+            getWorld()->playSound(SOUND_PROTESTER_ANNOYED);
+            int N = 100 - getWorld()->getLevel() * 10;
+            setTicksToWaitBetweenMoves(std::max(50, N));
+            // add a way to stunn 
+
+        }
+    }
+    if (getHitPoints() <= 0) {
+        getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
+        setIsLeavingField(true);
+        if (value == 100)
+            getWorld()->increaseScore(500);
+        else
+            getWorld()->increaseScore(100);
+        leaveOilField();
+    }
 
 }
-RegularProtester::~RegularProtester() {
+
+void RegularProtester::bribe() {
+    setIsLeavingField(true);
+    getWorld()->increaseScore(25);
+    leaveOilField();
+}
+RegularProtester::~RegularProtester() { }
+
+//////  Hardcore Protester//////////////////////////////////////
+HardcoreProtester::HardcoreProtester(StudentWorld* swPtr) :
+    Protester(IID_HARD_CORE_PROTESTER, 20, swPtr, true) {
 
 }
+void HardcoreProtester::annoy(int) { }
+
+void HardcoreProtester::bribe() {
+
+    getWorld()->increaseScore(50);
+    //stare
+}
+
+HardcoreProtester::~HardcoreProtester() { }
+
+
 //////Goodie Class//////////////////////////////////////////////////////////////////////////
 
 Goodie::Goodie(int imageID, int startX, int startY, Direction dir, double size, unsigned int depth,
     StudentWorld* swGoodie) : Actor(imageID, startX, startY, dir, size,
-        depth, swGoodie) {
+        depth, swGoodie) { }
 
-}
+void Goodie::annoy(int) { }  //none of the goodies can be annoyed
 
-void Goodie::annoy(int) {
-    //none of the goodies can be annoyed
-}
+bool Goodie::canBlock() { return false; } //Only Boulders canBlock!
 
-bool Goodie::canBlock() {
-    return false;
-}
-bool Goodie::isAnnoyable() {
-    return false;
-}
+bool Goodie::isAnnoyable() { return false; }  //goodies cannot be annoyed
 
-Goodie::~Goodie() {
+void Goodie::bribe() { return; }  //goodies can't be bribed 
 
-}
+Goodie::~Goodie() { }
 
 ////////////////BOULDER CLASS///////////////////////////////////////////////////////////
 Boulder::Boulder(int x, int y, StudentWorld* swBoulder) : Goodie(IID_BOULDER, x, y, down, 1.0,
@@ -763,11 +1074,9 @@ void Boulder::fall() {
     if (y == 0) {
         setState(false);
     }
-    else if (isIcePresentBelow(x, y)) {
-        setState(false);
-    }
-
-    else if (getWorld()->boulderPresent(x, y)) {
+    else if (isIcePresentBelow(x, y) || getWorld()->boulderPresent(x, y - 1)
+        || getWorld()->boulderPresent(x + 1, y - 1) || getWorld()->boulderPresent(x + 2, y - 1)
+        || getWorld()->boulderPresent(x + 3, y - 1)) {
         setState(false);
     }
     else {
@@ -793,9 +1102,7 @@ bool Boulder::canBlock() {
     return true;
 }
 
-Boulder::~Boulder() {
-
-}
+Boulder::~Boulder() { }
 
 ///////////OIL BARREL////////////////////////////////////////
 OilBarrel::OilBarrel(int x, int y, StudentWorld* swGoodie) : Goodie(IID_BARREL, x, y, right, 1.0, 2, swGoodie)
@@ -851,33 +1158,47 @@ Squirt::Squirt(int x, int y, Direction dir, StudentWorld* swWorld) : Goodie(IID_
 void Squirt::doSomething() {
 
     //if withing 3 radius of a protestor cause 2 annoyance. setstate dead
-    if (getWorld()->annoyPerson(getX(), getY(), 2, 3, false))
+    if (getWorld()->annoyPerson(getX(), getY(), 2, 3, false)) {
         setState(false);
-    else if (_travelDis == 0)
+        return;
+    }
+    else if (_travelDis == 0) {
         setState(false);
+        return;
+    }
     //if ice or boulder infront setStaet to dead
-    else if (getWorld()->boulderPresent(getX(), getY()))
-        setState(false);
-
     else if (getState()) {
 
         switch (getDirection()) {
         case up:
-            if (getWorld()->isIcePresent(getX(), getY() + 1))
+            if (getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4) ||
+                getWorld()->boulderPresent(getX(), getY() + 4)) {
                 setState(false);
+                return;
+            }
             break;
         case down:
-            if (getWorld()->isIcePresent(getX(), getY() - 1))
+            if (getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1) ||
+                getWorld()->boulderPresent(getX(), getY() - 1)) {
                 setState(false);
+                return;
+            }
             break;
         case right:
-            if (getWorld()->isIcePresent(getX() + 1, getY()))
+            if (getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3) ||
+                getWorld()->boulderPresent(getX() + 4, getY())) {
                 setState(false);
+                return;
+            }
             break;
         case left:
-            if (getWorld()->isIcePresent(getX() - 1, getY()))
+            if (getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3) ||
+                getWorld()->boulderPresent(getX() - 1, getY())) {
                 setState(false);
+                return;
+            }
             break;
+
         }
     }
 
@@ -912,7 +1233,7 @@ void Squirt::decTravelDis() {
 }
 
 Squirt::~Squirt() {
-
+    setVisible(false);
 }
 
 /////Gold Nugget//////////////////////////////////////////////////////////////
@@ -962,7 +1283,7 @@ void GoldNugget::doSomething() {
         if (getWorld()->pickGold(getX(), getY(), 3)) {
             setState(false);
             getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);
-            getWorld()->increaseScore(25);
+
         }
         else if (countTicks >= 100) {
             setState(false);

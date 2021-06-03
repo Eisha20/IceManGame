@@ -6,8 +6,6 @@
 #include <string>
 #include <algorithm>
 
-// Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
-
 #include "Actor.h"
 #include <vector>
 
@@ -22,19 +20,23 @@ public:
     virtual void cleanUp();
     bool isIcePresent(int x, int y);
     void destroyIce(int x, int y);
+    bool isIceManAt(const int actorX, const int actorY, const int endX, const int endY);
     bool isIceAt(const int actorX, const int actorY, const int endX, const int endY);
     bool isBlockableActorNearby(Actor*, int radius);
+    bool isBlockableActorWithin(int, int, int radius);
     IceMan* getIceMan();
     bool timeToCreateNewProtester(); // can probably move to private
     bool boulderPresent(int x, int y);
     bool annoyPerson(int x, int y, int annoyValue, int radius, bool annoyAll);
     bool pickGold(int x, int y, int radius);
     void makeDroppedGoldNugget();
+    bool overlappingIce(int x, int y);
     void makeSquirt(int, int);
+    bool checkRadiusForGoodies(int, int, int);
+    void makeGoodiesVisible(int x, int y, int radius);
     virtual ~StudentWorld();
 
 private:
-    bool checkRadiusForConstruction(int, int);
     void makeGold(int);
     void makeSonar();
     void makeWaterPool();
