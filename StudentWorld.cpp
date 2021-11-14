@@ -1,9 +1,10 @@
 #include "StudentWorld.h"
 #include <string>
+#include <sstream>  
+#include <iomanip>
+#include <iostream>
 
 using namespace std;
-
-
 
 GameWorld* createStudentWorld(string assetDir) {
     return new StudentWorld(assetDir);
@@ -15,19 +16,17 @@ StudentWorld::StudentWorld(std::string assetDir)
 }
 
 int StudentWorld::init() {
+    srand(time(0));
     makeIceMan();
     makeIceCubes();
     makeGoodies();
     _numProtesters = 0;
 
-
     return GWSTATUS_CONTINUE_GAME;
 }
 
 int StudentWorld::move() {
-    // This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
-    // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-    static int tick = 0;
+    
     makeStatString(); //set the status string 
 
     if (iceMan->getState()) {//if iceMan is alive then call do something 
@@ -51,16 +50,16 @@ int StudentWorld::move() {
     makeProtesters();
 
     //make sonar or water pool 
-    tick++;
-    int G = (getLevel() * 25) + 300;
-    if (tick == G) {
-        srand(time(0));
-        int chance = (rand() % 4) + 1;
-        if (chance == 1)
+   int G = (getLevel() * 25) + 300;
+    int rand1 = rand() % G;
+    int rand2 = rand() % G;
+    if(rand2 == rand1){
+        int chance2 = rand() % 4;
+        int chance1 = rand() % 4;
+        if (chance1 == chance2)
             makeSonar();
         else
             makeWaterPool();
-        tick = 0;
     }
     //delete all dead goodies 
     vector<Actor*>::iterator temp;
@@ -262,9 +261,7 @@ bool StudentWorld::overlappingIce(int x, int y) {
 void StudentWorld::makeSquirt(int x, int y) {
     Actor* ptr = new Squirt(x, y, getIceMan()->getDirection(), this);
     goodies.push_back(ptr);
-
 }
-
 
 void StudentWorld::makeDroppedGoldNugget() {
     Actor* ptr = new GoldNugget(getIceMan()->getX(), getIceMan()->getY(), this, true);
@@ -278,7 +275,6 @@ bool StudentWorld::checkRadiusForGoodies(int x, int y, int radius) {
         if (distance <= radius) {
             return false;
         }
-
     }
     return true;
 }
@@ -304,37 +300,99 @@ void StudentWorld::makeStatString() {
     int sonar = iceMan->getSonar();
     //Needs work but should be okay for testing
 
-    string gameStat = "Lvl: ";
+    string gameStat = neatly(level, lives, health, water, gold, oilLeft, sonar, score);
+        
+    //string gameStat = "Lvl: ";
 
-    string add = to_string(level);
-    gameStat += add;
+    //string add = to_string(level);
+    //gameStat += add;
 
-    gameStat += " Lives: ";
-    add = to_string(lives);
-    gameStat += add;
+    //gameStat += " Lives: ";
+    //add = to_string(lives);
+    //gameStat += add;
 
     //Do not have anything that keeps track of health yet
-    gameStat += " Hlth: ";
-    add = to_string(health);
-    gameStat += add;
-    gameStat += "% Wtr: ";
-    add = to_string(water);
-    gameStat += add;
-    gameStat += " Gld: ";
-    add = to_string(gold);
-    gameStat += add;
-    gameStat += " Oil Left: ";
-    add = to_string(oilLeft);
-    gameStat += add;
-    gameStat += " Sonar: ";
-    add = to_string(sonar);
-    gameStat += add;
+    //gameStat += " Hlth: ";
+    //add = to_string(health);
+    //gameStat += add;
+    //gameStat += "% Wtr: ";
+    //add = to_string(water);
+    //gameStat += add;
+    //gameStat += " Gld: ";
+    //add = to_string(gold);
+    //gameStat += add;
+    //gameStat += " Oil Left: ";
+    //add = to_string(oilLeft);
+    //gameStat += add;
+    //gameStat += " Sonar: ";
+    //add = to_string(sonar);
+    //gameStat += add;
     //get, convert and add score to string 
-    gameStat += " Scr: ";
-    add = to_string(score);
-    gameStat += add;
+    //gameStat += " Scr: ";
+    //add = to_string(score);
+    //gameStat += add;
 
     setGameStatText(gameStat);
+}
+
+string StudentWorld::neatly(int level, int lives, int health, int squirts, int gold, int oil, int sonar, int score) {
+
+    ostringstream oss;
+    oss.setf(ios::fixed);
+	oss.precision(0);
+
+    string neatlyFormatted{};
+    
+    neatlyFormatted += "Lvl: ";
+    oss << setw(2) << level;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+
+    neatlyFormatted += "  Lives: ";
+    oss << setw(1) << lives;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+
+    neatlyFormatted += "  Hlth: ";
+    oss << setw(3) << health;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+
+    neatlyFormatted += "%  Wtr: ";
+    oss << setw(2) << squirts;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+
+    neatlyFormatted += "  Gld: ";
+    oss << setw(2) << gold;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+
+    neatlyFormatted += "  Oil Left: ";
+    oss << setw(2) << oil;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+
+    neatlyFormatted += "  Sonar: ";
+    oss << setw(2) << sonar;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+
+    neatlyFormatted += "  Scr: ";
+    oss.fill('0');
+    oss << setw(6) << score << endl;
+    neatlyFormatted += oss.str();
+    oss.str("");
+    oss.clear();
+ 
+    return neatlyFormatted;
 }
 
 bool StudentWorld::isIcePresent(int x, int y) {
@@ -354,44 +412,39 @@ void StudentWorld::destroyIce(int x, int y) {
     iceCube[x][y] = nullptr;
 }
 
-// probably going to delete
 bool StudentWorld::isIceManAt(const int actorX, const int actorY, const int endX, const int endY) {
-
 
     /*
     Coordinate Guide:
     To check rightward send: getWorld()->isIceAt(getX(), getY(), getX() + 4 (or more), getY() + 3
-    To check leftward send: getWorld()->isIceAt(getX(), getY(), getX() - 1 (or more), getY() + 3
+    To check leftward send: getWorld()->isIceAt(getX(), getY(), getX() - 4 (or more), getY() + 3
     To check up send: getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4 (or more)
-    To check down send: getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1 (or more)
+    To check down send: getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 4 (or more)
     */
-
-
-
-    if (actorX + 4 >= endX && actorY + 3 == endY) { // trying to check rightward
-        for (int i = actorY; i <= endY; i++) {
-            //if (!(i < (VIEW_HEIGHT - 4) || endX < 0 || i < 0 || endX > VIEW_WIDTH)) {
-              //  return false;
-          //  }
-            if (getIceMan()->getX() == endX && getIceMan()->getY() == i) {
-                return true;
-            }
-
-        }
-    }
-    if (actorX - 1 <= endX && actorY + 3 == endY) { // trying to check leftward
-        for (int i = actorY; i <= endY; i++) {
-            // if (!(i < (VIEW_HEIGHT - 4) || endX < 0 || i < 0 || endX > VIEW_WIDTH)) {
-              //   return false;
-            // }
-            if (getIceMan()->getX() == endX && getIceMan()->getY() == i) {
-                return true;
+    
+        if (actorX + 4 >= endX && actorY + 3 == endY) { // trying to check rightward
+            for (int i = actorY; i <= endY; i++) {
+               // if (!(i < (VIEW_HEIGHT - 4) || endX < 0 || i < 0 || endX > VIEW_WIDTH)) 
+                    //return false;
+                
+                if (getIceMan()->getX() == endX && getIceMan()->getY() == i) {
+                    return true;
+                }
+                
             }
         }
-    }
-
-    /*
-    *         if (endY < (VIEW_HEIGHT - 4) || i < 0 || endY < 0 || i > VIEW_WIDTH) {
+         if (actorX - 1 <= endX && actorY + 3 == endY) { // trying to check leftward
+            for (int i = actorY; i <= endY; i++) {
+                //if (!(i < (VIEW_HEIGHT - 4) || endX < 0 || i < 0 || endX > VIEW_WIDTH)) 
+                    //return false;
+          
+                if (getIceMan()->getX() == endX && getIceMan()->getY() == i) {
+                    return true;
+                }
+            }
+        }
+    
+           //if (endY < (VIEW_HEIGHT - 4) || i < 0 || endY < 0 || i > VIEW_WIDTH) {
     else if (actorY + 4 >= endY && actorX + 3 == endX) { // trying to check upward
         for (int i = actorX; i <= endX; i++) {
             if (getIceMan()->getX() == i && getIceMan()->getY() == endY) {
@@ -405,12 +458,12 @@ bool StudentWorld::isIceManAt(const int actorX, const int actorY, const int endX
                 return true;
             }
         }
-    } */
+    } 
     return false;
 }
 
 bool StudentWorld::isIceAt(const int actorX, const int actorY, const int endX, const int endY) { // name better
-
+    
     /*
     Coordinate Guide:
     To check rightward send: getWorld()->isIceAt(getX(), getY(), getX() + 4 (or more), getY() + 3
@@ -432,7 +485,7 @@ bool StudentWorld::isIceAt(const int actorX, const int actorY, const int endX, c
                 return true;
             }
         }
-    }
+    } 
     else if (actorY + 4 >= endY && actorX + 3 == endX) { // trying to check upward
         for (int i = actorX; i <= endX; i++) {
             if (isIcePresent(i, endY)) {
@@ -449,7 +502,7 @@ bool StudentWorld::isIceAt(const int actorX, const int actorY, const int endX, c
     }
     return false;
     /*
-
+    
     if (actorX + 4 == endX && actorY + 3 == endY) { // trying to check rightward
         for (int i = actorY; i <= endY; i++) {
             if (isIcePresent(endX, i)) {
@@ -482,15 +535,6 @@ bool StudentWorld::isIceAt(const int actorX, const int actorY, const int endX, c
     return false;
 
     */
-
-
-    /*
-    Coordinate Guide:
-    To check rightward send: getWorld()->isIceAt(getX(), getY(), getX() + 4, getY() + 3
-    To check leftward send: getWorld()->isIceAt(getX(), getY(), getX() - 1, getY() + 3
-    To check up send: getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() + 4
-    To check down send: getWorld()->isIceAt(getX(), getY(), getX() + 3, getY() - 1
-    */
 }
 
 bool StudentWorld::isBlockableActorNearby(Actor* actorChecking, int radius) { // make Eisha's work for where i need this.
@@ -510,6 +554,7 @@ bool StudentWorld::isBlockableActorWithin(int x, int y, int radius) {
         if ((*it)->canBlock()) {
             if ((*it)->checkRadius((*it)->getX(), (*it)->getY(), x, y, radius)) { // if blocking actor within radius
                 return true;
+                
             }
         }
     }
@@ -611,7 +656,7 @@ StudentWorld::~StudentWorld() {
         delete iceMan;
         iceMan = nullptr;
     }
-
+    
     for (auto it = goodies.begin(); it != goodies.end(); ++it) {
         delete (*it);
     }
