@@ -13,7 +13,6 @@ class StudentWorld : public GameWorld {
 public:
 
     StudentWorld(std::string assetDir);
-
     virtual int init(); //gets called 1) game starts 2) during the start of a new level 3) loss of life
                         //when it gets called all previous objects should be deleted 
     virtual int move();
@@ -47,6 +46,7 @@ private:
     void makeProtesters();
     void makeGoodies();
     void makeStatString();
+    std::string neatly(int, int, int, int, int, int, int, int);
     IceMan* iceMan;
 
     //(x, y) coordinate: column, row
